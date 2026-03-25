@@ -10,6 +10,7 @@ import {
   logDomainFailure,
   logSubtitleSelection,
 } from './logging';
+import type { DomainProvider } from '../types/index';
 
 // Mock console.debug to capture log calls
 const originalConsoleDebug = console.debug;
@@ -17,11 +18,19 @@ const originalEnv = process.env.NODE_ENV;
 let debugCalls: any[] = [];
 
 beforeAll(() => {
-  process.env.NODE_ENV = 'development';
+  Object.defineProperty(process.env, 'NODE_ENV', {
+    value: 'development',
+    writable: true,
+    configurable: true,
+  });
 });
 
 afterAll(() => {
-  process.env.NODE_ENV = originalEnv;
+  Object.defineProperty(process.env, 'NODE_ENV', {
+    value: originalEnv,
+    writable: true,
+    configurable: true,
+  });
 });
 
 beforeEach(() => {
@@ -67,7 +76,7 @@ describe('Logging Utilities', () => {
     });
 
     it('logs with different domains', () => {
-      const domains = [
+      const domains: Array<DomainProvider> = [
         'vidsrc-embed.ru',
         'vidsrc-embed.su',
         'vidsrcme.su',
@@ -175,7 +184,7 @@ describe('Logging Utilities', () => {
     });
 
     it('logs with different domains', () => {
-      const domains = [
+      const domains: Array<DomainProvider> = [
         'vidsrc-embed.ru',
         'vidsrc-embed.su',
         'vidsrcme.su',

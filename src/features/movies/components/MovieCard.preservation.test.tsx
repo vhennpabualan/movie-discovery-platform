@@ -498,7 +498,7 @@ describe('MovieCard - Preservation Property Tests', () => {
         );
 
         const card = screen.getByRole('article');
-        const releaseYear = new Date(movie.release_date).getFullYear();
+        const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : 'Unknown';
         expect(card).toHaveAttribute(
           'aria-label',
           `${movie.title}, released ${releaseYear}`
