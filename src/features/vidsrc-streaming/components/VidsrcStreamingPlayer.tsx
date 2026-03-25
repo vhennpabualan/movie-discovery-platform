@@ -58,7 +58,7 @@ export function VidsrcStreamingPlayer({
   onSuccess,
 }: StreamingPlayerProps) {
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
-  const { loading, error, embedURL, retry } = useVidsrcPlayer(
+  const { loading, error, embedURL, retry, retryWithNextDomain } = useVidsrcPlayer(
     tmdbId,
     contentType,
     season,
@@ -134,7 +134,7 @@ export function VidsrcStreamingPlayer({
                 onError={() => {
                   // If iframe fails to load, trigger retry with next domain
                   console.warn('[Vidsrc] Iframe failed to load, retrying with next domain');
-                  retry();
+                  retryWithNextDomain();
                 }}
               />
             </div>

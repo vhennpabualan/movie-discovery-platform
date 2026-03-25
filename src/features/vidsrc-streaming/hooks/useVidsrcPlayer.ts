@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DomainProvider, StreamingError, StreamingErrorType } from '../types/index';
 import { VidsrcConfigurationManager } from '../services/VidsrcConfigurationManager';
 import { VidsrcEmbedURLGenerator } from '../services/VidsrcEmbedURLGenerator';
@@ -16,6 +16,7 @@ interface UseVidsrcPlayerState {
 
 export interface UseVidsrcPlayerReturn extends UseVidsrcPlayerState {
   retry: () => void;
+  retryWithNextDomain: () => void;
 }
 
 /**
@@ -52,8 +53,22 @@ export function useVidsrcPlayer(
     attemptedDomains: [],
   });
 
-  const configManager = useCallback(() => new VidsrcConfigurationManager(), []);
-  const urlGenerator = useCallback(() => new VidsrcEmbedURLGenerator(), []);
+  const configManagerRef = useRef<VidsrcConfigurationManager | null>(null);
+  const urlGeneratorRef = useRef<VidsrcEmbedURLGenerator | null>(null);
+
+  const configManager = useCallback(() => {
+    if (!configManagerRef.current) {
+      configManagerRef.current = new VidsrcConfigurationManager();
+    }
+    return configManagerRef.current;
+  }, []);
+
+  const urlGenerator = useCallback(() => {
+    if (!urlGeneratorRef.current) {
+      urlGeneratorRef.current = new VidsrcEmbedURLGenerator();
+    }
+    return urlGeneratorRef.current;
+  }, []);
 
   const generateURL = useCallback(
     async (manager: VidsrcConfigurationManager, generator: VidsrcEmbedURLGenerator) => {
@@ -141,6 +156,26 @@ export function useVidsrcPlayer(
     [tmdbId, contentType, season, episode, subtitleLanguage, autoplay, customSubtitleUrl, autonext]
   );
 
+  const retryWithNextDomain = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      loading: true,
+      error: null,
+      embedURL: null,
+    }));
+
+    const manager = configManager();
+    const generator = urlGenerator();
+
+    // Mark current domain as failed if we have one
+    if (state.currentDomain) {
+      manager.markDomainFailed(state.currentDomain);
+      console.log(`[Vidsrc] Marked domain as failed: ${state.currentDomain}, trying next domain...`);
+    }
+
+    generateURL(manager, generator);
+  }, [configManager, urlGenerator, generateURL, state.currentDomain]);
+
   const retry = useCallback(() => {
     setState({
       loading: true,
@@ -153,7 +188,7 @@ export function useVidsrcPlayer(
     const manager = configManager();
     const generator = urlGenerator();
 
-    // Reset domain list on retry
+    // Reset domain list on full retry
     manager.resetDomains();
 
     generateURL(manager, generator);
@@ -169,5 +204,6 @@ export function useVidsrcPlayer(
   return {
     ...state,
     retry,
+    retryWithNextDomain,
   };
 }
