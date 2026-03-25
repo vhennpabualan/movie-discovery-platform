@@ -40,10 +40,8 @@ export class VidsrcEmbedURLGenerator {
     this.validateTmdbId(config.tmdbId);
     this.validateDomain(config.domain);
 
-    const baseUrl = `https://${config.domain}/embed/movie`;
+    const baseUrl = `https://${config.domain}/embed/movie/${config.tmdbId}`;
     const params = new URLSearchParams();
-
-    params.append('tmdb', config.tmdbId.toString());
 
     if (config.subtitleLanguage) {
       params.append('ds_lang', config.subtitleLanguage);
@@ -57,7 +55,8 @@ export class VidsrcEmbedURLGenerator {
       params.append('sub_url', config.customSubtitleUrl);
     }
 
-    return `${baseUrl}?${params.toString()}`;
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   }
 
   /**
@@ -75,12 +74,8 @@ export class VidsrcEmbedURLGenerator {
       throw new Error('Season and episode are required for TV content');
     }
 
-    const baseUrl = `https://${config.domain}/embed/tv`;
+    const baseUrl = `https://${config.domain}/embed/tv/${config.tmdbId}/${config.season}/${config.episode}`;
     const params = new URLSearchParams();
-
-    params.append('tmdb', config.tmdbId.toString());
-    params.append('season', config.season.toString());
-    params.append('episode', config.episode.toString());
 
     if (config.subtitleLanguage) {
       params.append('ds_lang', config.subtitleLanguage);
@@ -98,7 +93,8 @@ export class VidsrcEmbedURLGenerator {
       params.append('autonext', '1');
     }
 
-    return `${baseUrl}?${params.toString()}`;
+    const queryString = params.toString();
+    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
   }
 
   /**
@@ -159,28 +155,42 @@ export class VidsrcEmbedURLGenerator {
         throw new Error(`Invalid domain: ${domain}`);
       }
 
-      // Extract content type from pathname
+      // Extract content type and parameters from pathname
       const pathname = urlObj.pathname;
-      let contentType: 'movie' | 'tv';
+      const pathParts = pathname.split('/').filter(p => p);
 
-      if (pathname.includes('/embed/movie')) {
-        contentType = 'movie';
-      } else if (pathname.includes('/embed/tv')) {
-        contentType = 'tv';
-      } else {
+      if (pathParts.length < 3 || pathParts[0] !== 'embed') {
         throw new Error(`Invalid URL path: ${pathname}`);
       }
 
-      // Extract and validate TMDB ID
-      const tmdbIdStr = urlObj.searchParams.get('tmdb');
-      if (!tmdbIdStr) {
-        throw new Error('Missing required parameter: tmdb');
+      const contentType = pathParts[1] as 'movie' | 'tv';
+      if (contentType !== 'movie' && contentType !== 'tv') {
+        throw new Error(`Invalid content type: ${contentType}`);
       }
 
-      const tmdbId = parseInt(tmdbIdStr, 10);
+      // Extract TMDB ID
+      const tmdbId = parseInt(pathParts[2], 10);
       this.validateTmdbId(tmdbId);
 
-      // Extract optional parameters
+      // Extract season and episode for TV content
+      let season: number | undefined;
+      let episode: number | undefined;
+
+      if (contentType === 'tv') {
+        if (pathParts.length < 5) {
+          throw new Error(
+            'Missing required parameters for TV content: season, episode'
+          );
+        }
+        season = parseInt(pathParts[3], 10);
+        episode = parseInt(pathParts[4], 10);
+
+        if (!Number.isInteger(season) || !Number.isInteger(episode)) {
+          throw new Error('Season and episode must be integers');
+        }
+      }
+
+      // Extract optional parameters from query string
       const subtitleLanguage = urlObj.searchParams.get('ds_lang') as
         | SubtitleLanguage
         | null;
@@ -189,28 +199,6 @@ export class VidsrcEmbedURLGenerator {
       const customSubtitleUrl = urlObj.searchParams.get('sub_url');
       const autonextStr = urlObj.searchParams.get('autonext');
       const autonext = autonextStr === '1';
-
-      // Extract season and episode for TV content
-      let season: number | undefined;
-      let episode: number | undefined;
-
-      if (contentType === 'tv') {
-        const seasonStr = urlObj.searchParams.get('season');
-        const episodeStr = urlObj.searchParams.get('episode');
-
-        if (!seasonStr || !episodeStr) {
-          throw new Error(
-            'Missing required parameters for TV content: season, episode'
-          );
-        }
-
-        season = parseInt(seasonStr, 10);
-        episode = parseInt(episodeStr, 10);
-
-        if (!Number.isInteger(season) || !Number.isInteger(episode)) {
-          throw new Error('Season and episode must be integers');
-        }
-      }
 
       return {
         domain: normalizedDomain as DomainProvider,
