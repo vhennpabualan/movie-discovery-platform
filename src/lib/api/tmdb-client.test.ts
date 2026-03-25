@@ -252,7 +252,7 @@ describe('TMDb API Client with Zod Validation', () => {
 
       const result = await getMovieDetails(550);
 
-      expect(result.overview).toBe('');
+      expect(result.overview).toBeUndefined();
       expect(result.genres).toEqual([]);
       expect(result.runtime).toBe(0);
       expect(result.vote_average).toBe(0);

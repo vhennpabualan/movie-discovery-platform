@@ -3,6 +3,7 @@ import { getMovieDetails } from '@/lib/api/tmdb-client';
 import { MoviePoster } from '@/features/movies/components/MoviePoster';
 import { RelatedMoviesSuspense } from '@/features/movies/components/RelatedMoviesSuspense';
 import { AddToWatchlistButton } from '@/features/watchlist/components/AddToWatchlistButton';
+import { VidsrcStreamingPlayer } from '@/features/vidsrc-streaming/components';
 import { APIResponseError, NetworkError } from '@/lib/api/errors';
 
 interface MovieDetailsPageProps {
@@ -53,7 +54,7 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
     const movie = await getMovieDetails(movieId);
 
     return (
-      <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark">
+      <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark">
         <article className="max-w-6xl mx-auto px-4 py-6 md:py-8">
           {/* Movie Details Container - Stack on mobile, two-column on desktop */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
@@ -151,6 +152,15 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Related Movies</h2>
             <RelatedMoviesSuspense movieId={movieId} />
           </section>
+
+          {/* Watch Now Section - Streaming Player */}
+          <section className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-netflix-gray/20">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Watch Now</h2>
+            <VidsrcStreamingPlayer
+              tmdbId={movieId}
+              contentType="movie"
+            />
+          </section>
         </article>
       </main>
     );
@@ -158,7 +168,7 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
     // Handle invalid movie IDs and other errors
     if (error instanceof APIResponseError && error.statusCode === 404) {
       return (
-        <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
+        <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
           <div className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Movie Not Found
@@ -180,7 +190,7 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
     // Handle network errors
     if (error instanceof NetworkError) {
       return (
-        <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
+        <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
           <div className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
               Connection Error
@@ -201,7 +211,7 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
 
     // Handle other errors
     return (
-      <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
+      <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Error Loading Movie
@@ -235,7 +245,7 @@ export default async function MovieDetailsPage({
   // Validate that ID is a valid number
   if (isNaN(movieId)) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
+      <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Invalid Movie ID
@@ -257,7 +267,7 @@ export default async function MovieDetailsPage({
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center">
+        <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center">
           <div className="text-center">
             <div className="inline-block">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-netflix-red"></div>

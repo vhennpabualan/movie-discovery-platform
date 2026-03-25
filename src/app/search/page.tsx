@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { searchMovies } from '@/lib/api/tmdb-client';
-import { MovieCard } from '@/features/movies/components/MovieCard';
+import { SearchResultsList } from '@/features/search/components/SearchResultsList';
 import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
 import { ErrorBoundary } from '@/features/ui/components/ErrorBoundary';
 
@@ -47,19 +47,7 @@ async function SearchResults({
           aria-live="polite"
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          <ul className="contents">
-            {results.results.map((movie) => (
-              <li key={movie.id}>
-                <MovieCard
-                  movie={movie}
-                  onClick={(movieId) => {
-                    // Navigation will be handled by client-side routing
-                    window.location.href = `/movies/${movieId}`;
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
+          <SearchResultsList results={results.results} />
         </section>
 
         {/* Pagination Info */}

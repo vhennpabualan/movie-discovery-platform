@@ -8,8 +8,8 @@ import { z } from 'zod';
 export const movieSchema = z.object({
   id: z.number().int().positive('Movie ID must be a positive integer'),
   title: z.string().min(1, 'Movie title is required'),
-  poster_path: z.string().nullable().default(null),
-  release_date: z.string().min(1, 'Release date is required'),
+  poster_path: z.string().nullish().default(null),
+  release_date: z.string().nullish().default(null),
 });
 
 export type Movie = z.infer<typeof movieSchema>;

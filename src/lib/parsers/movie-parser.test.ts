@@ -85,7 +85,7 @@ describe('Movie Parser', () => {
 
       try {
         parseMovie(incompleteData);
-        fail('Should have thrown MovieParseError');
+        throw new Error('Should have thrown MovieParseError');
       } catch (error) {
         expect(error).toBeInstanceOf(MovieParseError);
         expect((error as MovieParseError).validationErrors).toBeDefined();
@@ -100,7 +100,7 @@ describe('Movie Parser', () => {
 
       try {
         parseMovie(incompleteData);
-        fail('Should have thrown MovieParseError');
+        throw new Error('Should have thrown MovieParseError');
       } catch (error) {
         expect((error as MovieParseError).message).toContain('Failed to parse movie data');
         expect((error as MovieParseError).message).toContain('Missing or invalid fields');
@@ -142,7 +142,7 @@ describe('Movie Parser', () => {
 
       const result = parseMovieDetails(minimalData);
 
-      expect(result.overview).toBe('');
+      expect(result.overview).toBeUndefined();
       expect(result.genres).toEqual([]);
       expect(result.runtime).toBe(0);
       expect(result.vote_average).toBe(0);

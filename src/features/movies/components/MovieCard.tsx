@@ -21,9 +21,15 @@ export function MovieCard({
   const [isHovered, setIsHovered] = useState(false);
   const { navigateWithTransition } = useViewTransition();
 
+  const handleClick = () => {
+    onClick(movie.id);
+    navigateWithTransition(`/movies/${movie.id}`);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
       onClick(movie.id);
+      navigateWithTransition(`/movies/${movie.id}`);
     }
   };
 
@@ -37,13 +43,13 @@ export function MovieCard({
     <div
       role="article"
       tabIndex={0}
-      onClick={() => onClick(movie.id)}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       aria-label={ariaLabel}
       className="relative w-full aspect-2/3 cursor-pointer rounded-lg overflow-hidden group transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-netflix-red/50 focus:outline-none focus:ring-2 focus:ring-netflix-red"
-      style={{ viewTransitionName: 'poster-image' } as any}
+      style={{ viewTransitionName: `poster-image-${movie.id}` } as any}
     >
       {/* Poster Image */}
       {movie.poster_path ? (
@@ -66,7 +72,7 @@ export function MovieCard({
 
       {/* Hover Content */}
       {isHovered && (
-        <div className="absolute inset-0 flex flex-col justify-end p-4 bg-gradient-to-t from-netflix-dark via-black/50 to-transparent">
+        <div className="absolute inset-0 flex flex-col justify-end p-4 bg-linear-to-t from-netflix-dark via-black/50 to-transparent">
           <h3 className="text-white font-bold text-sm line-clamp-2 mb-2">
             {movie.title}
           </h3>

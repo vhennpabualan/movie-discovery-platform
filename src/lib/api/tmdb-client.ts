@@ -200,7 +200,7 @@ export async function getMoviesByTrending(
     });
 
     // Validate response against schema before returning
-    const validatedData = apiResponseSchema.parse(data);
+    const validatedData = apiResponseSchema.parse(data) as APIResponse;
     return validatedData;
   } catch (error) {
     if (error instanceof Error && error.name === 'ZodError') {
@@ -233,7 +233,7 @@ export async function searchMovies(
     });
 
     // Validate response against schema before returning
-    const validatedData = apiResponseSchema.parse(data);
+    const validatedData = apiResponseSchema.parse(data) as APIResponse;
     return validatedData;
   } catch (error) {
     if (error instanceof Error && error.name === 'ZodError') {
@@ -293,7 +293,7 @@ export async function getSimilarMovies(
     });
 
     // Validate response against schema before returning
-    const validatedData = apiResponseSchema.parse(data);
+    const validatedData = apiResponseSchema.parse(data) as APIResponse;
     return validatedData;
   } catch (error) {
     if (error instanceof Error && error.name === 'ZodError') {

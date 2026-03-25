@@ -12,7 +12,7 @@ export const genreSchema = z.object({
 });
 
 export const movieDetailsSchema = movieSchema.extend({
-  overview: z.string().default(''),
+  overview: z.string().min(1, 'Overview must not be empty').optional(),
   genres: z.array(genreSchema).default([]),
   runtime: z.number().int().nonnegative('Runtime must be a non-negative integer').default(0),
   vote_average: z.number().nonnegative('Vote average must be non-negative').default(0),
