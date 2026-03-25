@@ -62,7 +62,7 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
             <aside className="md:col-span-1">
               <div className="relative aspect-2/3 rounded-lg overflow-hidden shadow-2xl">
                 <MoviePoster
-                  posterPath={movie.poster_path}
+                  posterPath={movie.poster_path ?? null}
                   title={movie.title}
                   fill
                   priority
