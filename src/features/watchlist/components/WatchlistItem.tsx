@@ -84,14 +84,20 @@ export function WatchlistItem({ movie, onRemove }: WatchlistItemProps) {
     <>
       <div className="relative w-full aspect-2/3 rounded-lg overflow-hidden group transition-transform duration-300 hover:scale-105 focus-within:ring-2 focus-within:ring-netflix-red">
         {/* Poster Image */}
-        <Image
-          src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
-          alt={movie.title}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover"
-          priority={false}
-        />
+        {movie.poster_path ? (
+          <Image
+            src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
+            alt={movie.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            className="object-cover"
+            priority={false}
+          />
+        ) : (
+          <div className="w-full h-full bg-netflix-dark-secondary flex items-center justify-center">
+            <span className="text-netflix-gray text-sm">No Image</span>
+          </div>
+        )}
 
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors duration-300" />

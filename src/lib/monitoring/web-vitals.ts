@@ -80,17 +80,17 @@ async function sendMetricsToMonitoring(data: WebVitalsData): Promise<void> {
 function logMetricsToConsole(data: WebVitalsData): void {
   if (process.env.NODE_ENV === 'development') {
     console.group('[Web Vitals]');
-    if (data.lcp) {
+    if (data.lcp && typeof data.lcp.value === 'number') {
       console.log(
         `LCP: ${data.lcp.value.toFixed(2)}ms (${data.lcp.rating})`
       );
     }
-    if (data.fid) {
+    if (data.fid && typeof data.fid.value === 'number') {
       console.log(
         `FID: ${data.fid.value.toFixed(2)}ms (${data.fid.rating})`
       );
     }
-    if (data.cls) {
+    if (data.cls && typeof data.cls.value === 'number') {
       console.log(
         `CLS: ${data.cls.value.toFixed(4)} (${data.cls.rating})`
       );
@@ -208,6 +208,7 @@ export function initializeWebVitalsTracking(): void {
 /**
  * Gets current Web Vitals metrics
  * Useful for displaying metrics in a performance dashboard
+ * Uses PerformanceObserver with buffered: true to avoid deprecated API warnings
  */
 export function getWebVitalsMetrics(): WebVitalsData | null {
   if (typeof window === 'undefined') {
@@ -222,46 +223,66 @@ export function getWebVitalsMetrics(): WebVitalsData | null {
 
   if ('PerformanceObserver' in window) {
     try {
-      // Get LCP
-      const lcpEntries = performance.getEntriesByType('largest-contentful-paint');
-      if (lcpEntries.length > 0) {
-        const lastEntry = lcpEntries[lcpEntries.length - 1];
-        const lcpValue = (lastEntry as any).renderTime || (lastEntry as any).loadTime;
-        metrics.lcp = {
-          name: 'LCP',
-          value: lcpValue,
-          timestamp: Date.now(),
-          rating: getRating('LCP', lcpValue),
-        };
+      // Get LCP using PerformanceObserver
+      try {
+        const lcpObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries();
+          if (entries.length > 0) {
+            const lastEntry = entries[entries.length - 1] as any;
+            const lcpValue = lastEntry.renderTime || lastEntry.loadTime;
+            metrics.lcp = {
+              name: 'LCP',
+              value: lcpValue,
+              timestamp: Date.now(),
+              rating: getRating('LCP', lcpValue),
+            };
+          }
+        });
+        lcpObserver.observe({ type: 'largest-contentful-paint', buffered: true });
+      } catch (e) {
+        // LCP not supported
       }
 
-      // Get FID
-      const fidEntries = performance.getEntriesByType('first-input');
-      if (fidEntries.length > 0) {
-        const fidValue = (fidEntries[0] as any).processingDuration;
-        metrics.fid = {
-          name: 'FID',
-          value: fidValue,
-          timestamp: Date.now(),
-          rating: getRating('FID', fidValue),
-        };
+      // Get FID using PerformanceObserver
+      try {
+        const fidObserver = new PerformanceObserver((list) => {
+          const entries = list.getEntries();
+          if (entries.length > 0) {
+            const fidValue = (entries[0] as any).processingDuration;
+            metrics.fid = {
+              name: 'FID',
+              value: fidValue,
+              timestamp: Date.now(),
+              rating: getRating('FID', fidValue),
+            };
+          }
+        });
+        fidObserver.observe({ type: 'first-input', buffered: true });
+      } catch (e) {
+        // FID not supported
       }
 
-      // Get CLS
-      let clsValue = 0;
-      const clsEntries = performance.getEntriesByType('layout-shift');
-      clsEntries.forEach((entry) => {
-        if (!(entry as any).hadRecentInput) {
-          clsValue += (entry as any).value;
-        }
-      });
-      if (clsValue > 0) {
-        metrics.cls = {
-          name: 'CLS',
-          value: clsValue,
-          timestamp: Date.now(),
-          rating: getRating('CLS', clsValue),
-        };
+      // Get CLS using PerformanceObserver
+      try {
+        let clsValue = 0;
+        const clsObserver = new PerformanceObserver((list) => {
+          list.getEntries().forEach((entry) => {
+            if (!(entry as any).hadRecentInput) {
+              clsValue += (entry as any).value;
+            }
+          });
+          if (clsValue > 0) {
+            metrics.cls = {
+              name: 'CLS',
+              value: clsValue,
+              timestamp: Date.now(),
+              rating: getRating('CLS', clsValue),
+            };
+          }
+        });
+        clsObserver.observe({ type: 'layout-shift', buffered: true });
+      } catch (e) {
+        // CLS not supported
       }
     } catch (e) {
       // Performance API not available

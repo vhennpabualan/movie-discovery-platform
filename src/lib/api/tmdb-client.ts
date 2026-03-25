@@ -101,10 +101,11 @@ async function makeRequest<T>(
 ): Promise<T> {
   validateApiKey();
 
-  const url = `${TMDB_BASE_URL}${endpoint}`;
+  const apiKey = getApiKey();
+  const separator = endpoint.includes('?') ? '&' : '?';
+  const url = `${TMDB_BASE_URL}${endpoint}${separator}api_key=${apiKey}`;
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${getApiKey()}`,
     ...options.headers,
   } as Record<string, string>;
 

@@ -52,7 +52,7 @@ export function MovieCarousel({
         }}
       >
         {/* Grid Layout: 1 col mobile, 2 col tablet, 4 col desktop */}
-        {movies.map((movie) => (
+        {movies.map((movie, index) => (
           <li
             key={movie.id}
             className="shrink-0 w-full sm:w-1/2 md:w-1/2 lg:w-1/4"
@@ -61,6 +61,7 @@ export function MovieCarousel({
               movie={movie}
               onClick={onMovieClick}
               isInWatchlist={watchlistIds.includes(movie.id)}
+              priority={index === 0}
             />
           </li>
         ))}

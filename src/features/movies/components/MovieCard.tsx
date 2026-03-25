@@ -9,12 +9,14 @@ interface MovieCardProps {
   movie: Movie & { vote_average?: number };
   onClick: (movieId: number) => void;
   isInWatchlist?: boolean;
+  priority?: boolean;
 }
 
 export function MovieCard({
   movie,
   onClick,
   isInWatchlist = false,
+  priority = false,
 }: MovieCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { navigateWithTransition } = useViewTransition();
@@ -44,14 +46,20 @@ export function MovieCard({
       style={{ viewTransitionName: 'poster-image' } as any}
     >
       {/* Poster Image */}
-      <Image
-        src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
-        alt={movie.title}
-        fill
-        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-        className="object-cover transition-all duration-300 group-hover:brightness-125"
-        priority={false}
-      />
+      {movie.poster_path ? (
+        <Image
+          src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
+          alt={movie.title}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-cover transition-all duration-300 group-hover:brightness-125"
+          priority={priority}
+        />
+      ) : (
+        <div className="w-full h-full bg-netflix-dark-secondary flex items-center justify-center">
+          <span className="text-netflix-gray text-sm">No Image</span>
+        </div>
+      )}
 
       {/* Dark Overlay with Netflix Red Accent */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300" />

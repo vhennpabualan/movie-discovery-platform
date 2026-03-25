@@ -87,7 +87,7 @@ export default function RootLayout({
         {/* Footer */}
         <footer className="bg-netflix-dark-secondary border-t border-netflix-gray/20 py-8 px-4">
           <div className="max-w-7xl mx-auto text-center text-netflix-gray text-sm">
-            <p>&copy; 2024 Movie Discovery Platform. All rights reserved.</p>
+            <p>&copy; 2026 Movie Discovery Platform. All rights reserved. Personal use.</p>
           </div>
         </footer>
       </body>
