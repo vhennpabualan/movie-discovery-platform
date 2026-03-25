@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import { SearchBar } from "@/features/search/components/SearchBar";
 import { MobileNav } from "@/features/ui/components/MobileNav";
 import { PerformanceDashboard } from "@/features/ui/components/PerformanceDashboard";
@@ -90,6 +91,7 @@ export default function RootLayout({
             <p>&copy; 2026 Movie Discovery Platform. All rights reserved. Personal use.</p>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
