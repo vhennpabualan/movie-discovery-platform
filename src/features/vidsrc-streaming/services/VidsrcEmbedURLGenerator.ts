@@ -40,23 +40,7 @@ export class VidsrcEmbedURLGenerator {
     this.validateTmdbId(config.tmdbId);
     this.validateDomain(config.domain);
 
-    const baseUrl = `https://${config.domain}/embed/movie/${config.tmdbId}`;
-    const params = new URLSearchParams();
-
-    if (config.subtitleLanguage) {
-      params.append('ds_lang', config.subtitleLanguage);
-    }
-
-    if (config.autoplay) {
-      params.append('autoplay', '1');
-    }
-
-    if (config.customSubtitleUrl) {
-      params.append('sub_url', config.customSubtitleUrl);
-    }
-
-    const queryString = params.toString();
-    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+    return `https://${config.domain}/embed/movie/${config.tmdbId}`;
   }
 
   /**
@@ -74,27 +58,7 @@ export class VidsrcEmbedURLGenerator {
       throw new Error('Season and episode are required for TV content');
     }
 
-    const baseUrl = `https://${config.domain}/embed/tv/${config.tmdbId}/${config.season}/${config.episode}`;
-    const params = new URLSearchParams();
-
-    if (config.subtitleLanguage) {
-      params.append('ds_lang', config.subtitleLanguage);
-    }
-
-    if (config.autoplay) {
-      params.append('autoplay', '1');
-    }
-
-    if (config.customSubtitleUrl) {
-      params.append('sub_url', config.customSubtitleUrl);
-    }
-
-    if (config.autonext) {
-      params.append('autonext', '1');
-    }
-
-    const queryString = params.toString();
-    return queryString ? `${baseUrl}?${queryString}` : baseUrl;
+    return `https://${config.domain}/embed/tv/${config.tmdbId}/${config.season}/${config.episode}`;
   }
 
   /**
