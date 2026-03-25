@@ -13,14 +13,12 @@ import type {
 } from '../types/index';
 
 const ALLOWED_DOMAINS: DomainProvider[] = [
-  'vidsrc-embed.ru',
-  'vidsrc-embed.su',
-  'vidsrcme.su',
-  'vsrc.su',
-  'vidsrc.me',
-  'embed.su',
+  'vidsrc.to',
+  'vidsrc.xyz',
+  'vidsrc.net',
+  'vidsrc.pm',
+  'vidsrc.icu',
 ];
-
 const TMDB_ID_MIN = 1;
 const TMDB_ID_MAX = 2147483647;
 
