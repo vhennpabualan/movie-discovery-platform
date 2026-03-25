@@ -1,0 +1,10 @@
+import { Movie } from './movie';
+
+/**
+ * APIResponse interface for TMDb API responses containing paginated movie results
+ */
+export interface APIResponse {
+  results: Movie[];
+  page: number;
+  total_pages: number;
+}
