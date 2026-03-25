@@ -22,11 +22,25 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_DELAY = 100; // milliseconds
 
+// Cache for search results
+const searchCache = new Map<string, APIResponse>();
+
+// In-flight requests map to deduplicate concurrent requests
+const inFlightRequests = new Map<string, Promise<APIResponse>>();
+
 /**
  * Gets the API key from environment
  */
 function getApiKey(): string {
   return process.env.NEXT_PUBLIC_TMDB_API_KEY || '';
+}
+
+/**
+ * Clears the search cache and in-flight requests (for testing purposes)
+ */
+export function clearSearchCache(): void {
+  searchCache.clear();
+  inFlightRequests.clear();
 }
 
 /**
@@ -226,26 +240,53 @@ export async function searchMovies(
   page: number = 1
 ): Promise<APIResponse> {
   const encodedQuery = encodeURIComponent(query);
+  const cacheKey = `${query}:${page}`;
   const endpoint = `/search/movie?query=${encodedQuery}&page=${page}`;
-  try {
-    const data = await makeRequest<APIResponse>(endpoint, {
-      next: { revalidate: 3600, tags: [`search-results-${query}`] },
-    });
 
-    // Validate response against schema before returning
-    const validatedData = apiResponseSchema.parse(data) as APIResponse;
-    return validatedData;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'ZodError') {
-      const validationError = new ValidationError(
-        `Invalid API response format: ${error.message}`,
-        error
-      );
-      logError(validationError, endpoint);
-      throw validationError;
-    }
-    throw error;
+  // Check if result is in cache
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey)!;
   }
+
+  // Check if request is in-flight
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey)!;
+  }
+
+  // Create new request and store in in-flight map
+  const requestPromise = (async () => {
+    try {
+      const data = await makeRequest<APIResponse>(endpoint, {
+        next: { revalidate: 3600, tags: [`search-results-${query}`] },
+      });
+
+      // Validate response against schema before returning
+      const validatedData = apiResponseSchema.parse(data) as APIResponse;
+
+      // Cache the result
+      searchCache.set(cacheKey, validatedData);
+
+      return validatedData;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        const validationError = new ValidationError(
+          `Invalid API response format: ${error.message}`,
+          error
+        );
+        logError(validationError, endpoint);
+        throw validationError;
+      }
+      throw error;
+    } finally {
+      // Clean up in-flight map entry
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  // Store in-flight request
+  inFlightRequests.set(cacheKey, requestPromise);
+
+  return requestPromise;
 }
 
 /**
