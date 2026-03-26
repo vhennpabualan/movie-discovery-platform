@@ -22,10 +22,6 @@ const ALLOWED_DOMAINS: DomainProvider[] = [
   'vidsrc.pm',
   'vidsrc.icu',
   'vidsrc.me',
-  'vidsrc-embed.ru',
-  'vidsrc-embed.su',
-  'vidsrcme.su',
-  'vsrc.su',
 ];
 
 /**

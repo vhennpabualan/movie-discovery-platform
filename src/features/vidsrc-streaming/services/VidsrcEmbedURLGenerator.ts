@@ -20,10 +20,6 @@ const ALLOWED_DOMAINS: DomainProvider[] = [
   'vidsrc.pm',
   'vidsrc.icu',
   'vidsrc.me',
-  'vidsrc-embed.ru',
-  'vidsrc-embed.su',
-  'vidsrcme.su',
-  'vsrc.su',
 ];
 const TMDB_ID_MIN = 1;
 const TMDB_ID_MAX = 2147483647;
