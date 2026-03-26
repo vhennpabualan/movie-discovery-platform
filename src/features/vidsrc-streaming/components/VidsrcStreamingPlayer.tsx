@@ -67,7 +67,9 @@ export function VidsrcStreamingPlayer({
     episode,
     language,
     autoplay,
-    customSubtitleUrl
+    customSubtitleUrl,
+    undefined,
+    selectedDomain
   );
 
   // Update selected domain when current domain changes
@@ -101,19 +103,51 @@ export function VidsrcStreamingPlayer({
           </div>
         )}
 
-        {/* Subtitle Selector */}
-        <div className="mb-4 flex items-center gap-3">
-          <label
-            htmlFor="subtitle-selector"
-            className="text-sm font-medium text-gray-300"
-          >
-            Subtitles:
-          </label>
-          <SubtitleLanguageSelector
-            selectedLanguage={language}
-            onLanguageChange={setLanguage}
-            disabled={loading}
-          />
+        {/* Subtitle Selector and Domain Selector */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="subtitle-selector"
+              className="text-sm font-medium text-gray-300"
+            >
+              Subtitles:
+            </label>
+            <SubtitleLanguageSelector
+              selectedLanguage={language}
+              onLanguageChange={setLanguage}
+              disabled={loading}
+            />
+          </div>
+
+          {/* Domain/Server Selector */}
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="domain-selector"
+              className="text-sm font-medium text-gray-300"
+            >
+              Server:
+            </label>
+            <select
+              id="domain-selector"
+              value={selectedDomain || currentDomain || ''}
+              onChange={(e) => {
+                const newDomain = e.target.value as DomainProvider;
+                if (newDomain) {
+                  setSelectedDomain(newDomain);
+                }
+              }}
+              disabled={loading}
+              className="px-3 py-1 bg-gray-800 text-gray-100 text-sm rounded border border-gray-700 hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-netflix-red disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Select streaming server"
+            >
+              <option value="">Select a server...</option>
+              {DOMAIN_PROVIDERS.map((domain) => (
+                <option key={domain} value={domain}>
+                  {domain}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Loading State */}
