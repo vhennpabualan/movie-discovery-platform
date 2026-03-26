@@ -348,3 +348,79 @@ export async function getSimilarMovies(
     throw error;
   }
 }
+
+/**
+ * Fetches the list of official genres from TMDb
+ * @returns Array of genre objects with id and name
+ */
+export async function getGenres(): Promise<Array<{ id: number; name: string }>> {
+  const endpoint = '/genre/movie/list';
+  try {
+    const data = await makeRequest<{ genres: Array<{ id: number; name: string }> }>(endpoint, {
+      next: { revalidate: 86400, tags: ['genres'] },
+    });
+    return data.genres || [];
+  } catch (error) {
+    logError(error as Error, endpoint);
+    throw error;
+  }
+}
+
+/**
+ * Fetches movies by genre
+ * @param genreId - The genre ID
+ * @param page - Page number for pagination (default: 1)
+ * @returns APIResponse containing movies in the specified genre
+ */
+export async function getMoviesByGenre(
+  genreId: number,
+  page: number = 1
+): Promise<APIResponse> {
+  const cacheKey = `genre-${genreId}:${page}`;
+  const endpoint = `/discover/movie?with_genres=${genreId}&page=${page}&sort_by=popularity.desc`;
+
+  // Check if result is in cache
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey)!;
+  }
+
+  // Check if request is in-flight
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey)!;
+  }
+
+  // Create new request and store in in-flight map
+  const requestPromise = (async () => {
+    try {
+      const data = await makeRequest<APIResponse>(endpoint, {
+        next: { revalidate: 3600, tags: [`genre-movies-${genreId}`] },
+      });
+
+      // Validate response against schema before returning
+      const validatedData = apiResponseSchema.parse(data) as APIResponse;
+
+      // Cache the result
+      searchCache.set(cacheKey, validatedData);
+
+      return validatedData;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        const validationError = new ValidationError(
+          `Invalid API response format: ${error.message}`,
+          error
+        );
+        logError(validationError, endpoint);
+        throw validationError;
+      }
+      throw error;
+    } finally {
+      // Clean up in-flight map entry
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  // Store in-flight request
+  inFlightRequests.set(cacheKey, requestPromise);
+
+  return requestPromise;
+}

@@ -40,12 +40,12 @@ async function SearchResults({
 
     return (
       <div className="space-y-8">
-        {/* Results Grid - 1 col mobile, 2 col tablet, 4 col desktop */}
+        {/* Results Grid - 2 col mobile, 3 col tablet, 5 col desktop */}
         <section
           role="region"
           aria-label="Search results"
           aria-live="polite"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 md:gap-6"
         >
           <SearchResultsList results={results.results} />
         </section>

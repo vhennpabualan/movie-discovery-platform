@@ -23,8 +23,8 @@ export async function TrendingMovies() {
     // Fetch trending movies from TMDb API
     const response = await getMoviesByTrending('day', 1);
 
-    // Extract movies from response
-    const movies = response.results || [];
+    // Extract movies from response and filter out those without posters
+    const movies = (response.results || []).filter(movie => movie.poster_path);
 
     // If no movies found, show empty state
     if (movies.length === 0) {

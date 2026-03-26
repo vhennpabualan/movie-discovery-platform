@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 /**
@@ -37,6 +37,18 @@ export function MobileNav() {
     }
   };
 
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   return (
     <div className="md:hidden">
       {/* Hamburger Button */}
@@ -45,7 +57,7 @@ export function MobileNav() {
         onKeyDown={handleKeyDown}
         aria-label="Toggle navigation menu"
         aria-expanded={isOpen}
-        className="p-2 text-white hover:text-netflix-red transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red rounded"
+        className="p-2 text-white hover:text-netflix-red transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red rounded z-60 relative"
       >
         <svg
           className="w-6 h-6"
@@ -71,26 +83,43 @@ export function MobileNav() {
         </svg>
       </button>
 
-      {/* Mobile Menu Dropdown */}
+      {/* Mobile Menu Overlay */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 bg-netflix-dark-secondary border-b border-netflix-gray/20 shadow-lg">
-          <nav className="flex flex-col p-4 gap-2">
-            <Link
-              href="/search"
-              onClick={closeMenu}
-              className="text-white hover:text-netflix-red transition-colors px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-netflix-red"
-            >
-              Search
-            </Link>
-            <Link
-              href="/watchlist"
-              onClick={closeMenu}
-              className="text-white hover:text-netflix-red transition-colors px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-netflix-red"
-            >
-              Watchlist
-            </Link>
-          </nav>
-        </div>
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 z-55 top-[73px]"
+            onClick={closeMenu}
+            aria-hidden="true"
+          />
+          
+          {/* Menu Panel */}
+          <div className="fixed top-[73px] left-0 right-0 bg-netflix-dark border-b border-netflix-gray/20 shadow-2xl z-56 animate-slideDown">
+            <nav className="flex flex-col p-6 gap-1">
+              <Link
+                href="/search"
+                onClick={closeMenu}
+                className="text-white hover:bg-netflix-red/10 hover:text-netflix-red transition-all px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red text-lg"
+              >
+                Search
+              </Link>
+              <Link
+                href="/browse"
+                onClick={closeMenu}
+                className="text-white hover:bg-netflix-red/10 hover:text-netflix-red transition-all px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red text-lg"
+              >
+                Browse
+              </Link>
+              <Link
+                href="/watchlist"
+                onClick={closeMenu}
+                className="text-white hover:bg-netflix-red/10 hover:text-netflix-red transition-all px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red text-lg"
+              >
+                Watchlist
+              </Link>
+            </nav>
+          </div>
+        </>
       )}
     </div>
   );

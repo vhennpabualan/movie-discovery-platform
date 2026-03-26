@@ -17,6 +17,11 @@ const config: Config = {
         // Gray for secondary elements
         'netflix-gray': '#808080',
       },
+      zIndex: {
+        '45': '45',
+        '60': '60',
+        '100': '100',
+      },
       screens: {
         // Custom responsive breakpoints
         'mobile': { 'max': '639px' },
