@@ -80,39 +80,6 @@ export function VidsrcStreamingPlayer({
     }
   }, [currentDomain, selectedDomain]);
 
-  // Create blob URL to break frame chain and bypass Vidsrc sandbox detection
-  useEffect(() => {
-    if (!embedURL) {
-      setBlobUrl(null);
-      return;
-    }
-
-    // Create HTML that wraps the embed URL in an iframe
-    // This breaks the frame chain so Vidsrc's sbx.js can't detect the parent frame
-    // Inner iframe has NO sandbox attribute so dtc_sbx check passes
-    const html = `<!DOCTYPE html>
-<html>
-  <head>
-    <style>* { margin: 0; padding: 0; overflow: hidden; }</style>
-  </head>
-  <body>
-    <iframe
-      src="${embedURL}"
-      style="width:100vw;height:100vh;border:none;"
-      allowfullscreen
-      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-    ></iframe>
-  </body>
-</html>`;
-
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    setBlobUrl(url);
-
-    // Cleanup old blob URLs to avoid memory leaks
-    return () => URL.revokeObjectURL(url);
-  }, [embedURL]);
-
   // Call onSuccess callback when player loads successfully
   useEffect(() => {
     if (!loading && !error && embedURL && onSuccess) {
@@ -194,23 +161,21 @@ export function VidsrcStreamingPlayer({
         {/* Player Container - 16:9 Aspect Ratio */}
         {!loading && embedURL && (
           <div className="w-full bg-black rounded-lg overflow-hidden">
-            {/* Responsive container with 16:9 aspect ratio */}
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
-                src={blobUrl ?? ''}
+                src={embedURL} /* 1. Use embedURL directly, bypass the Blob */
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
-                referrerPolicy="no-referrer"
+                /* 2. COMPLETELY REMOVE the sandbox attribute */
+                referrerPolicy="origin" /* 3. Match your Next.js config headers */
                 allowFullScreen
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                 loading="lazy"
                 onLoad={() => {
-                  // Iframe loaded successfully - clear any errors
                   console.log('[Vidsrc] Player loaded successfully');
                 }}
                 onError={() => {
-                  // If iframe fails to load, trigger retry with next domain
                   console.warn('[Vidsrc] Iframe failed to load, retrying with next domain');
                   retryWithNextDomain();
                 }}

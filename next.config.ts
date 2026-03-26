@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' blob: https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cloudnestra.com; connect-src 'self' https://cloudnestra.com;",
+            value: "frame-src 'self' https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com;",
           },
           {
             key: "X-Frame-Options",
@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' blob: https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cloudnestra.com; connect-src 'self' https://cloudnestra.com;",
+            value: "frame-src 'self' https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com;",
           },
           {
             key: "X-Frame-Options",
