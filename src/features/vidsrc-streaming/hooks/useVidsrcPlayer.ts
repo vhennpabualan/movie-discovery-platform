@@ -43,7 +43,8 @@ export function useVidsrcPlayer(
   subtitleLanguage?: string,
   autoplay?: boolean,
   customSubtitleUrl?: string,
-  autonext?: boolean
+  autonext?: boolean,
+  preferredDomain?: DomainProvider | null
 ): UseVidsrcPlayerReturn {
   const [state, setState] = useState<UseVidsrcPlayerState>({
     loading: true,
@@ -71,13 +72,17 @@ export function useVidsrcPlayer(
   }, []);
 
   const generateURL = useCallback(
-    async (manager: VidsrcConfigurationManager, generator: VidsrcEmbedURLGenerator) => {
+    async (manager: VidsrcConfigurationManager, generator: VidsrcEmbedURLGenerator, forceDomain?: DomainProvider | null) => {
       try {
         // Validate TMDB ID
         generator.validateTmdbId(tmdbId);
 
-        // Get next available domain
-        const domain = manager.getNextDomain();
+        // Get domain - use preferred domain if provided and valid, otherwise get next available
+        let domain: DomainProvider | null = forceDomain || null;
+        if (!domain) {
+          domain = manager.getNextDomain();
+        }
+        
         if (!domain) {
           const error: StreamingError = {
             type: 'ALL_DOMAINS_FAILED',
@@ -153,8 +158,25 @@ export function useVidsrcPlayer(
         }));
       }
     },
-    [tmdbId, contentType, season, episode, subtitleLanguage, autoplay, customSubtitleUrl, autonext]
+    [tmdbId, contentType, season, episode, subtitleLanguage, autoplay, customSubtitleUrl, autonext, preferredDomain]
   );
+
+  // Effect to handle preferred domain changes
+  useEffect(() => {
+    if (preferredDomain && preferredDomain !== state.currentDomain) {
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        error: null,
+        embedURL: null,
+      }));
+
+      const manager = configManager();
+      const generator = urlGenerator();
+
+      generateURL(manager, generator, preferredDomain);
+    }
+  }, [preferredDomain, state.currentDomain, configManager, urlGenerator, generateURL]);
 
   const retryWithNextDomain = useCallback(() => {
     setState((prev) => ({
@@ -198,8 +220,8 @@ export function useVidsrcPlayer(
     const manager = configManager();
     const generator = urlGenerator();
 
-    generateURL(manager, generator);
-  }, [generateURL, configManager, urlGenerator]);
+    generateURL(manager, generator, preferredDomain);
+  }, [generateURL, configManager, urlGenerator, preferredDomain]);
 
   return {
     ...state,

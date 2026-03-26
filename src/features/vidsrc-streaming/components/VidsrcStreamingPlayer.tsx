@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useVidsrcPlayer } from '../hooks/useVidsrcPlayer';
 import { useSubtitlePreference } from '../hooks/useSubtitlePreference';
-import type { StreamingPlayerProps } from '../types/index';
+import type { StreamingPlayerProps, DomainProvider } from '../types/index';
+import { DOMAIN_PROVIDERS } from '../config/domains';
 import { SubtitleLanguageSelector } from './SubtitleLanguageSelector';
 import { StreamErrorBoundary } from './StreamErrorBoundary';
 import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
@@ -57,16 +58,26 @@ export function VidsrcStreamingPlayer({
   onError,
   onSuccess,
 }: StreamingPlayerProps) {
+  const [selectedDomain, setSelectedDomain] = useState<DomainProvider | null>(null);
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
-  const { loading, error, embedURL, retry, retryWithNextDomain } = useVidsrcPlayer(
+  const { loading, error, embedURL, retry, retryWithNextDomain, currentDomain } = useVidsrcPlayer(
     tmdbId,
     contentType,
     season,
     episode,
     language,
     autoplay,
-    customSubtitleUrl
+    customSubtitleUrl,
+    undefined, // autonext
+    selectedDomain
   );
+
+  // Update selected domain when current domain changes
+  useEffect(() => {
+    if (currentDomain && !selectedDomain) {
+      setSelectedDomain(currentDomain);
+    }
+  }, [currentDomain, selectedDomain]);
 
   // Call onSuccess callback when player loads successfully
   useEffect(() => {
@@ -92,7 +103,34 @@ export function VidsrcStreamingPlayer({
           </div>
         )}
 
-        {/* Subtitle Language Selector */}
+        {/* Domain Selector */}
+        <div className="mb-4 flex items-center gap-3">
+          <label
+            htmlFor="domain-selector"
+            className="text-sm font-medium text-gray-300"
+          >
+            Server:
+          </label>
+          <select
+            id="domain-selector"
+            value={selectedDomain || ''}
+            onChange={(e) => {
+              const newDomain = e.target.value as DomainProvider;
+              setSelectedDomain(newDomain);
+            }}
+            disabled={loading}
+            className="bg-netflix-dark-secondary text-white text-sm rounded-lg px-3 py-2 border border-netflix-gray/30 focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-transparent disabled:opacity-50"
+          >
+            {DOMAIN_PROVIDERS.map((domain) => (
+              <option key={domain} value={domain}>
+                {domain}
+              </option>
+            ))}
+          </select>
+          {loading && (
+            <span className="text-xs text-gray-500">Connecting...</span>
+          )}
+        </div>
         <div className="mb-4 flex items-center gap-3">
           <label
             htmlFor="subtitle-selector"
