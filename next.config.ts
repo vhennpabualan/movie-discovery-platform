@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su;",
+            value: "frame-src 'self' https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru;",
           },
           {
             key: "X-Frame-Options",
@@ -40,7 +40,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su;",
+            value: "frame-src 'self' https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru;",
           },
           {
             key: "X-Frame-Options",
