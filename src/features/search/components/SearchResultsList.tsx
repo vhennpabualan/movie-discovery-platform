@@ -12,10 +12,7 @@ export function SearchResultsList({ results }: SearchResultsListProps) {
     <ul className="contents">
       {results.map((movie) => (
         <li key={movie.id}>
-          <MovieCard
-            movie={movie}
-            onClick={() => {}}
-          />
+          <MovieCard movie={movie} />
         </li>
       ))}
     </ul>

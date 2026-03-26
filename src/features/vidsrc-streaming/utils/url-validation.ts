@@ -15,12 +15,17 @@ import type { DomainProvider } from '../types/index';
  * Only URLs from these domains will be considered valid.
  */
 const ALLOWED_DOMAINS: DomainProvider[] = [
-  
+  'vidsrc.in',
   'vidsrc.to',
   'vidsrc.xyz',
   'vidsrc.net',
   'vidsrc.pm',
-  'vidsrc.icu'
+  'vidsrc.icu',
+  'vidsrc.me',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vidsrcme.su',
+  'vsrc.su',
 ];
 
 /**

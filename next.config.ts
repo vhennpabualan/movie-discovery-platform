@@ -23,7 +23,24 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://vidsrc.in https://vidsrc.to https://vidsrc.xyz https://vidsrc.net https://vidsrc.pm https://vidsrc.icu https://vidsrc.me;",
+            value: "frame-src 'self' https://vidsrc.in https://vidsrc.to https://vidsrc.xyz https://vidsrc.net https://vidsrc.pm https://vidsrc.icu https://vidsrc.me https://vsembed.ru https://cloudnestra.com https://vidsrcme.ru https://vidsrcme.vidsrc.icu;",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "origin",
+          },
+        ],
+      },
+      {
+        source: "/tv/:id",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-src 'self' https://vidsrc.in https://vidsrc.to https://vidsrc.xyz https://vidsrc.net https://vidsrc.pm https://vidsrc.icu https://vidsrc.me https://vsembed.ru https://cloudnestra.com https://vidsrcme.ru https://vidsrcme.vidsrc.icu;",
           },
           {
             key: "X-Frame-Options",

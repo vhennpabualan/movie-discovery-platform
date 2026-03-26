@@ -130,9 +130,8 @@ export function logSubtitleSelection(
  * @internal
  */
 function sendToMonitoringService(event: Record<string, unknown>): void {
-  // In a real implementation, this would send to a monitoring service
-  // For now, we log to console in development
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  // In development or test environments, log to console
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     console.debug('[Vidsrc Monitoring]', event);
   }
 

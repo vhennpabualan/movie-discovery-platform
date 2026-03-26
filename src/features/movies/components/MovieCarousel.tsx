@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { Movie } from '@/types/movie';
 import { MovieCard } from './MovieCard';
 import { useViewTransition } from '@/lib/hooks/useViewTransition';
@@ -18,13 +17,11 @@ export function MovieCarousel({
   watchlistIds = [],
 }: MovieCarouselProps) {
   const scrollContainerRef = useRef<HTMLUListElement>(null);
-  const router = useRouter();
   const { navigateWithTransition } = useViewTransition();
 
-  // Default navigation handler when onMovieClick is not provided
-  const handleMovieClick = onMovieClick || ((movieId: number) => {
-    navigateWithTransition(`/movies/${movieId}`);
-  });
+  // Default click handler when onMovieClick is not provided
+  // NOTE: Navigation is handled by MovieCard to avoid double navigation.
+  const handleMovieClick = onMovieClick || (() => {});
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {

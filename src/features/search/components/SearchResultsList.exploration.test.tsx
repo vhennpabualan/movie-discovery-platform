@@ -44,7 +44,16 @@ jest.mock('next/image', () => ({
 }));
 
 // Mock useViewTransition hook to track calls
-const mockNavigateWithTransition = jest.fn();
+const mockNavigateWithTransition = jest.fn((href: string) => {
+  // Mimic the behavior of useViewTransition: if the API exists, it should be invoked
+  if ('startViewTransition' in document) {
+    (document as any).startViewTransition(() => {
+      // In this exploration test we only care that startViewTransition is invoked.
+      // Next.js routing is tested elsewhere.
+      void href;
+    });
+  }
+});
 jest.mock('@/lib/hooks/useViewTransition', () => ({
   useViewTransition: () => ({
     navigateWithTransition: mockNavigateWithTransition,

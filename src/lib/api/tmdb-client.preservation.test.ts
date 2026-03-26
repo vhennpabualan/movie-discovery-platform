@@ -6,7 +6,7 @@
  * Property 4: Preservation - API Error Handling
  */
 
-import { searchMovies, getMovieDetails, getSimilarMovies, getMoviesByTrending } from './tmdb-client';
+import { searchMovies, getMovieDetails, getSimilarMovies, getMoviesByTrending, clearSearchCache } from './tmdb-client';
 import { APIResponseError, NetworkError } from './errors';
 
 global.fetch = jest.fn();
@@ -14,6 +14,7 @@ global.fetch = jest.fn();
 describe('TMDb API Client - Preservation Property Tests for Error Handling', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearSearchCache();
     process.env.NEXT_PUBLIC_TMDB_API_KEY = 'test-api-key';
   });
 

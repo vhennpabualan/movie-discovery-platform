@@ -17,7 +17,11 @@ export type DomainProvider =
   | 'vidsrc.net'
   | 'vidsrc.pm'
   | 'vidsrc.icu'
-  | 'vidsrc.me';
+  | 'vidsrc.me'
+  | 'vidsrc-embed.ru'
+  | 'vidsrc-embed.su'
+  | 'vidsrcme.su'
+  | 'vsrc.su';
 
 /**
  * Health status information for a domain provider.

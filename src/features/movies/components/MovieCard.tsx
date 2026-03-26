@@ -7,7 +7,7 @@ import { useViewTransition } from '@/lib/hooks/useViewTransition';
 
 interface MovieCardProps {
   movie: Movie & { vote_average?: number };
-  onClick: (movieId: number) => void;
+  onClick?: (movieId: number) => void;
   isInWatchlist?: boolean;
   priority?: boolean;
 }
@@ -25,8 +25,8 @@ export function MovieCard({
     e.preventDefault();
     e.stopPropagation();
     
-    // Call onClick callback first
-    onClick(movie.id);
+    // Call onClick callback first (if provided)
+    onClick?.(movie.id);
     
     // Navigate with transition (has built-in error handling)
     navigateWithTransition(`/movies/${movie.id}`);
@@ -37,7 +37,8 @@ export function MovieCard({
       e.preventDefault();
       e.stopPropagation();
       
-      onClick(movie.id);
+      // Call onClick callback first (if provided)
+      onClick?.(movie.id);
       navigateWithTransition(`/movies/${movie.id}`);
     }
   };
@@ -50,7 +51,7 @@ export function MovieCard({
 
   return (
     <div
-      role="link"
+      role="article"
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}

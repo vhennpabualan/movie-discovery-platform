@@ -5,7 +5,6 @@
  */
 
 export { VidsrcStreamingPlayer } from './VidsrcStreamingPlayer';
-export type { } from './VidsrcStreamingPlayer';
 
 export { SubtitleLanguageSelector } from './SubtitleLanguageSelector';
 

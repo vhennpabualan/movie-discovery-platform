@@ -67,9 +67,7 @@ export function VidsrcStreamingPlayer({
     episode,
     language,
     autoplay,
-    customSubtitleUrl,
-    undefined, // autonext
-    selectedDomain
+    customSubtitleUrl
   );
 
   // Update selected domain when current domain changes
@@ -103,34 +101,7 @@ export function VidsrcStreamingPlayer({
           </div>
         )}
 
-        {/* Domain Selector */}
-        <div className="mb-4 flex items-center gap-3">
-          <label
-            htmlFor="domain-selector"
-            className="text-sm font-medium text-gray-300"
-          >
-            Server:
-          </label>
-          <select
-            id="domain-selector"
-            value={selectedDomain || ''}
-            onChange={(e) => {
-              const newDomain = e.target.value as DomainProvider;
-              setSelectedDomain(newDomain);
-            }}
-            disabled={loading}
-            className="bg-netflix-dark-secondary text-white text-sm rounded-lg px-3 py-2 border border-netflix-gray/30 focus:outline-none focus:ring-2 focus:ring-netflix-red focus:border-transparent disabled:opacity-50"
-          >
-            {DOMAIN_PROVIDERS.map((domain) => (
-              <option key={domain} value={domain}>
-                {domain}
-              </option>
-            ))}
-          </select>
-          {loading && (
-            <span className="text-xs text-gray-500">Connecting...</span>
-          )}
-        </div>
+        {/* Subtitle Selector */}
         <div className="mb-4 flex items-center gap-3">
           <label
             htmlFor="subtitle-selector"
@@ -162,9 +133,8 @@ export function VidsrcStreamingPlayer({
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
-                referrerPolicy="origin"
-                allow="autoplay; fullscreen; picture-in-picture"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+                referrerPolicy="no-referrer"
                 allowFullScreen
                 loading="lazy"
                 onLoad={() => {

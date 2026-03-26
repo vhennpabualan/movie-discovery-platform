@@ -20,6 +20,10 @@ const ALLOWED_DOMAINS: DomainProvider[] = [
   'vidsrc.pm',
   'vidsrc.icu',
   'vidsrc.me',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vidsrcme.su',
+  'vsrc.su',
 ];
 const TMDB_ID_MIN = 1;
 const TMDB_ID_MAX = 2147483647;
@@ -42,7 +46,22 @@ export class VidsrcEmbedURLGenerator {
     this.validateTmdbId(config.tmdbId);
     this.validateDomain(config.domain);
 
-    return `https://${config.domain}/embed/movie/${config.tmdbId}`;
+    const url = new URL(`https://${config.domain}/embed/movie`);
+    url.searchParams.set('tmdb', config.tmdbId.toString());
+
+    if (config.subtitleLanguage) {
+      url.searchParams.set('ds_lang', config.subtitleLanguage);
+    }
+
+    if (config.autoplay) {
+      url.searchParams.set('autoplay', '1');
+    }
+
+    if (config.customSubtitleUrl) {
+      url.searchParams.set('sub_url', config.customSubtitleUrl);
+    }
+
+    return url.toString();
   }
 
   /**
@@ -60,7 +79,28 @@ export class VidsrcEmbedURLGenerator {
       throw new Error('Season and episode are required for TV content');
     }
 
-    return `https://${config.domain}/embed/tv/${config.tmdbId}/${config.season}/${config.episode}`;
+    const url = new URL(`https://${config.domain}/embed/tv`);
+    url.searchParams.set('tmdb', config.tmdbId.toString());
+    url.searchParams.set('season', config.season.toString());
+    url.searchParams.set('episode', config.episode.toString());
+
+    if (config.subtitleLanguage) {
+      url.searchParams.set('ds_lang', config.subtitleLanguage);
+    }
+
+    if (config.autoplay) {
+      url.searchParams.set('autoplay', '1');
+    }
+
+    if (config.customSubtitleUrl) {
+      url.searchParams.set('sub_url', config.customSubtitleUrl);
+    }
+
+    if (config.autonext) {
+      url.searchParams.set('autonext', '1');
+    }
+
+    return url.toString();
   }
 
   /**
@@ -121,11 +161,11 @@ export class VidsrcEmbedURLGenerator {
         throw new Error(`Invalid domain: ${domain}`);
       }
 
-      // Extract content type and parameters from pathname
+      // Extract content type from pathname
       const pathname = urlObj.pathname;
       const pathParts = pathname.split('/').filter(p => p);
 
-      if (pathParts.length < 3 || pathParts[0] !== 'embed') {
+      if (pathParts.length < 2 || pathParts[0] !== 'embed') {
         throw new Error(`Invalid URL path: ${pathname}`);
       }
 
@@ -134,8 +174,13 @@ export class VidsrcEmbedURLGenerator {
         throw new Error(`Invalid content type: ${contentType}`);
       }
 
-      // Extract TMDB ID
-      const tmdbId = parseInt(pathParts[2], 10);
+      // Extract TMDB ID from query parameters
+      const tmdbParam = urlObj.searchParams.get('tmdb');
+      if (!tmdbParam) {
+        throw new Error('Missing required parameter: tmdb');
+      }
+
+      const tmdbId = parseInt(tmdbParam, 10);
       this.validateTmdbId(tmdbId);
 
       // Extract season and episode for TV content
@@ -143,13 +188,17 @@ export class VidsrcEmbedURLGenerator {
       let episode: number | undefined;
 
       if (contentType === 'tv') {
-        if (pathParts.length < 5) {
+        const seasonParam = urlObj.searchParams.get('season');
+        const episodeParam = urlObj.searchParams.get('episode');
+
+        if (!seasonParam || !episodeParam) {
           throw new Error(
             'Missing required parameters for TV content: season, episode'
           );
         }
-        season = parseInt(pathParts[3], 10);
-        episode = parseInt(pathParts[4], 10);
+
+        season = parseInt(seasonParam, 10);
+        episode = parseInt(episodeParam, 10);
 
         if (!Number.isInteger(season) || !Number.isInteger(episode)) {
           throw new Error('Season and episode must be integers');
