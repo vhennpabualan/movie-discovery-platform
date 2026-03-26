@@ -89,6 +89,7 @@ export function VidsrcStreamingPlayer({
 
     // Create HTML that wraps the embed URL in an iframe
     // This breaks the frame chain so Vidsrc's sbx.js can't detect the parent frame
+    // allow-same-origin is needed for localStorage access in the player
     const html = `<!DOCTYPE html>
 <html>
   <head>
@@ -98,6 +99,7 @@ export function VidsrcStreamingPlayer({
     <iframe
       src="${embedURL}"
       style="width:100vw;height:100vh;border:none;"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms"
       allowfullscreen
       allow="autoplay; fullscreen; picture-in-picture"
     ></iframe>
@@ -200,7 +202,7 @@ export function VidsrcStreamingPlayer({
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-popups allow-presentation allow-forms"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-presentation allow-forms"
                 referrerPolicy="no-referrer"
                 allowFullScreen
                 loading="lazy"
