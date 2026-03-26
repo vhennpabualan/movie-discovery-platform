@@ -10,18 +10,16 @@ import type { DomainProvider } from '../types';
 /**
  * Array of domain providers in priority order.
  * When one domain fails, the system will attempt the next domain in this list.
+ * Based on official Vidsrc API documentation.
  *
  * @constant
  * @type {DomainProvider[]}
  */
 export const DOMAIN_PROVIDERS: DomainProvider[] = [
-  'vidsrc.in',
-  'vidsrc.to',
-  'vidsrc.xyz',
-  'vidsrc.net',
-  'vidsrc.pm',
-  'vidsrc.icu',
-  'vidsrc.me',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vidsrcme.su',
+  'vsrc.su',
 ];
 
 /**

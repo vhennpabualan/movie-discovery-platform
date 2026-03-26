@@ -9,15 +9,13 @@
 /**
  * Supported domain providers for Vidsrc embed URLs.
  * Listed in priority order for fallback logic.
+ * Based on official Vidsrc API documentation.
  */
 export type DomainProvider =
-  | 'vidsrc.in'
-  | 'vidsrc.to'
-  | 'vidsrc.xyz'
-  | 'vidsrc.net'
-  | 'vidsrc.pm'
-  | 'vidsrc.icu'
-  | 'vidsrc.me';
+  | 'vidsrc-embed.ru'
+  | 'vidsrc-embed.su'
+  | 'vidsrcme.su'
+  | 'vsrc.su';
 
 /**
  * Health status information for a domain provider.

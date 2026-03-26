@@ -13,15 +13,13 @@ import type { DomainProvider } from '../types/index';
 /**
  * List of whitelisted domains for Vidsrc embed URLs.
  * Only URLs from these domains will be considered valid.
+ * Based on official Vidsrc API documentation.
  */
 const ALLOWED_DOMAINS: DomainProvider[] = [
-  'vidsrc.in',
-  'vidsrc.to',
-  'vidsrc.xyz',
-  'vidsrc.net',
-  'vidsrc.pm',
-  'vidsrc.icu',
-  'vidsrc.me',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vidsrcme.su',
+  'vsrc.su',
 ];
 
 /**
