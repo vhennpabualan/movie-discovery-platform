@@ -11,11 +11,13 @@
  * Listed in priority order for fallback logic.
  */
 export type DomainProvider =
+  | 'vidsrc.in'
   | 'vidsrc.to'
   | 'vidsrc.xyz'
   | 'vidsrc.net'
   | 'vidsrc.pm'
-  | 'vidsrc.icu';
+  | 'vidsrc.icu'
+  | 'vidsrc.me';
 
 /**
  * Health status information for a domain provider.

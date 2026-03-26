@@ -15,11 +15,13 @@ import type { DomainProvider } from '../types';
  * @type {DomainProvider[]}
  */
 export const DOMAIN_PROVIDERS: DomainProvider[] = [
+  'vidsrc.in',
   'vidsrc.to',
   'vidsrc.xyz',
   'vidsrc.net',
   'vidsrc.pm',
   'vidsrc.icu',
+  'vidsrc.me',
 ];
 
 /**

@@ -13,11 +13,13 @@ import type {
 } from '../types/index';
 
 const ALLOWED_DOMAINS: DomainProvider[] = [
+  'vidsrc.in',
   'vidsrc.to',
   'vidsrc.xyz',
   'vidsrc.net',
   'vidsrc.pm',
   'vidsrc.icu',
+  'vidsrc.me',
 ];
 const TMDB_ID_MIN = 1;
 const TMDB_ID_MAX = 2147483647;
