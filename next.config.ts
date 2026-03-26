@@ -15,6 +15,28 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["react", "react-dom"],
   },
+  // Add headers for streaming iframe support
+  async headers() {
+    return [
+      {
+        source: "/movies/:id",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-src 'self' https://vidsrc.to https://vidsrc.xyz https://vidsrc.net https://vidsrc.pm https://vidsrc.icu;",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "origin",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

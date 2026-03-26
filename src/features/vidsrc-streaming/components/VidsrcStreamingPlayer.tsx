@@ -124,9 +124,11 @@ export function VidsrcStreamingPlayer({
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms"
-                referrerPolicy="no-referrer-when-downgrade"
+                sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms allow-top-navigation-by-user-activation"
+                referrerPolicy="origin"
+                allow="autoplay; fullscreen; picture-in-picture"
                 allowFullScreen
+                loading="lazy"
                 onLoad={() => {
                   // Iframe loaded successfully - clear any errors
                   console.log('[Vidsrc] Player loaded successfully');

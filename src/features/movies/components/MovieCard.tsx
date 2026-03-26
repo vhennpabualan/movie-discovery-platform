@@ -21,13 +21,22 @@ export function MovieCard({
   const [isHovered, setIsHovered] = useState(false);
   const { navigateWithTransition } = useViewTransition();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Call onClick callback first
     onClick(movie.id);
+    
+    // Navigate with transition (has built-in error handling)
     navigateWithTransition(`/movies/${movie.id}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      
       onClick(movie.id);
       navigateWithTransition(`/movies/${movie.id}`);
     }
@@ -41,7 +50,7 @@ export function MovieCard({
 
   return (
     <div
-      role="article"
+      role="link"
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
