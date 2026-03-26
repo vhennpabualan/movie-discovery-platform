@@ -59,6 +59,7 @@ export function VidsrcStreamingPlayer({
   onSuccess,
 }: StreamingPlayerProps) {
   const [selectedDomain, setSelectedDomain] = useState<DomainProvider | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
   const { loading, error, embedURL, retry, retryWithNextDomain, currentDomain } = useVidsrcPlayer(
     tmdbId,
@@ -78,6 +79,38 @@ export function VidsrcStreamingPlayer({
       setSelectedDomain(currentDomain);
     }
   }, [currentDomain, selectedDomain]);
+
+  // Create blob URL to break frame chain and bypass Vidsrc sandbox detection
+  useEffect(() => {
+    if (!embedURL) {
+      setBlobUrl(null);
+      return;
+    }
+
+    // Create HTML that wraps the embed URL in an iframe
+    // This breaks the frame chain so Vidsrc's sbx.js can't detect the parent frame
+    const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <style>* { margin: 0; padding: 0; overflow: hidden; }</style>
+  </head>
+  <body>
+    <iframe
+      src="${embedURL}"
+      style="width:100vw;height:100vh;border:none;"
+      allowfullscreen
+      allow="autoplay; fullscreen; picture-in-picture"
+    ></iframe>
+  </body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    setBlobUrl(url);
+
+    // Cleanup old blob URLs to avoid memory leaks
+    return () => URL.revokeObjectURL(url);
+  }, [embedURL]);
 
   // Call onSuccess callback when player loads successfully
   useEffect(() => {
@@ -163,11 +196,11 @@ export function VidsrcStreamingPlayer({
             {/* Responsive container with 16:9 aspect ratio */}
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
-                src={embedURL}
+                src={blobUrl ?? ''}
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+                sandbox="allow-scripts allow-popups allow-presentation allow-forms"
                 referrerPolicy="no-referrer"
                 allowFullScreen
                 loading="lazy"
