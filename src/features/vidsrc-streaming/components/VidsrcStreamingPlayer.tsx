@@ -69,6 +69,7 @@ export function VidsrcStreamingPlayer({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [currentSeason, setCurrentSeason] = useState(initialSeason ?? 1);
   const [currentEpisode, setCurrentEpisode] = useState(initialEpisode ?? 1);
+  const [iframeReady, setIframeReady] = useState(false);
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
   const { loading, error, embedURL, retry, retryWithNextDomain, currentDomain } = useVidsrcPlayer(
     tmdbId,
@@ -198,7 +199,6 @@ export function VidsrcStreamingPlayer({
           </div>
         )}
 
-        {/* Player Container - 16:9 Aspect Ratio */}
         {!loading && embedURL && (
           <div className="w-full bg-black rounded-lg overflow-hidden">
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
@@ -206,11 +206,11 @@ export function VidsrcStreamingPlayer({
                 src={embedURL}
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
-                className="absolute inset-0 w-full h-full border-0 rounded-lg"
+                className={`absolute inset-0 w-full h-full border-0 rounded-lg ${!iframeReady ? 'pointer-events-none' : ''}`}
                 referrerPolicy="origin"
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                loading="eager"
+                loading="lazy"
                 onLoad={() => {
                   console.log('[Vidsrc] Player loaded successfully');
                   console.log('[Vidsrc] Embed URL:', embedURL);
