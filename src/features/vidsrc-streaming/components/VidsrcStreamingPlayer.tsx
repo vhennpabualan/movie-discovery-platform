@@ -207,10 +207,10 @@ export function VidsrcStreamingPlayer({
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                referrerPolicy="no-referrer"
+                referrerPolicy="origin"
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                loading="lazy"
+                loading="eager"
                 onLoad={() => {
                   console.log('[Vidsrc] Player loaded successfully');
                   console.log('[Vidsrc] Embed URL:', embedURL);
