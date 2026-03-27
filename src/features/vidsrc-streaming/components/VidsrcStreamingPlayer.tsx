@@ -202,13 +202,12 @@ export function VidsrcStreamingPlayer({
         {!loading && embedURL && (
           <div className="w-full bg-black rounded-lg overflow-hidden">
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-              const [iframeReady, setIframeReady] = useState(false);
               <iframe
                 src={embedURL}
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                referrerPolicy="origin"
+                referrerPolicy="no-referrer"
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                 loading="lazy"
