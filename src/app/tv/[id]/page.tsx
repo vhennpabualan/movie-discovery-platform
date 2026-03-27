@@ -1,14 +1,16 @@
 import { Suspense } from 'react';
-import { getMovieDetails } from '@/lib/api/tmdb-client';
+import { getTVShowDetails } from '@/lib/api/tmdb-client';
 import { MoviePoster } from '@/features/movies/components/MoviePoster';
-import { RelatedMoviesSuspense } from '@/features/movies/components/RelatedMoviesSuspense';
-import { AddToWatchlistButton } from '@/features/watchlist/components/AddToWatchlistButton';
 import { VidsrcStreamingPlayer } from '@/features/vidsrc-streaming/components';
 import { APIResponseError, NetworkError } from '@/lib/api/errors';
 
-interface MovieDetailsPageProps {
+interface TVShowDetailsPageProps {
   params: Promise<{
     id: string;
+  }>;
+  searchParams: Promise<{
+    season?: string;
+    episode?: string;
   }>;
 }
 
@@ -36,34 +38,37 @@ function StarRating({ voteAverage }: { voteAverage: number }) {
 }
 
 /**
- * Formats runtime in minutes to hours and minutes
+ * TV show details page content component
  */
-function formatRuntime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  if (hours === 0) return `${mins}m`;
-  if (mins === 0) return `${hours}h`;
-  return `${hours}h ${mins}m`;
-}
-
-/**
- * Movie details page content component
- */
-async function MovieDetailsContent({ movieId }: { movieId: number }) {
+async function TVShowDetailsContent({ 
+  tvId, 
+  initialSeason, 
+  initialEpisode 
+}: { 
+  tvId: number;
+  initialSeason: number;
+  initialEpisode: number;
+}) {
   try {
-    const movie = await getMovieDetails(movieId);
+    const tvShow = await getTVShowDetails(tvId);
+
+    // Find the selected season to get episode count
+    const selectedSeasonData = tvShow.seasons.find(
+      (s) => s.season_number === initialSeason
+    );
+    const episodeCount = selectedSeasonData?.episode_count || 1;
 
     return (
       <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark">
         <article className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-          {/* Movie Details Container - Stack on mobile, two-column on desktop */}
+          {/* TV Show Details Container */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {/* Poster Section */}
             <aside className="md:col-span-1">
               <div className="relative aspect-2/3 rounded-lg overflow-hidden shadow-2xl">
                 <MoviePoster
-                  posterPath={movie.poster_path ?? null}
-                  title={movie.title}
+                  posterPath={tvShow.poster_path ?? null}
+                  title={tvShow.name}
                   fill
                   priority
                   sizes="(max-width: 768px) 100vw, 33vw"
@@ -75,43 +80,44 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
             <section className="md:col-span-2 flex flex-col justify-start">
               {/* Title */}
               <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">
-                {movie.title}
+                {tvShow.name}
               </h1>
 
-              {/* Release Date */}
-              {movie.release_date && (
+              {/* First Air Date */}
+              {tvShow.first_air_date && (
                 <p className="text-netflix-gray text-base md:text-lg mb-4">
-                  {new Date(movie.release_date).getFullYear()}
+                  {new Date(tvShow.first_air_date).getFullYear()}
+                  {tvShow.status === 'Returning Series' && ' - Present'}
+                  {tvShow.last_air_date && tvShow.status !== 'Returning Series' && 
+                    ` - ${new Date(tvShow.last_air_date).getFullYear()}`}
                 </p>
               )}
 
               {/* Rating */}
               <div className="mb-6">
-                <StarRating voteAverage={movie.vote_average} />
+                <StarRating voteAverage={tvShow.vote_average} />
               </div>
 
               {/* Metadata */}
               <div className="space-y-4 mb-6 pb-6 border-b border-netflix-gray/20">
-                {/* Runtime */}
-                {movie.runtime > 0 && (
-                  <div>
-                    <h3 className="text-netflix-gray text-xs md:text-sm font-semibold mb-1">
-                      Runtime
-                    </h3>
-                    <p className="text-white text-base md:text-lg">
-                      {formatRuntime(movie.runtime)}
-                    </p>
-                  </div>
-                )}
+                {/* Seasons & Episodes */}
+                <div>
+                  <h3 className="text-netflix-gray text-xs md:text-sm font-semibold mb-1">
+                    Seasons & Episodes
+                  </h3>
+                  <p className="text-white text-base md:text-lg">
+                    {tvShow.number_of_seasons} Season{tvShow.number_of_seasons !== 1 ? 's' : ''} • {tvShow.number_of_episodes} Episodes
+                  </p>
+                </div>
 
                 {/* Genres */}
-                {movie.genres && movie.genres.length > 0 && (
+                {tvShow.genres && tvShow.genres.length > 0 && (
                   <div>
                     <h3 className="text-netflix-gray text-xs md:text-sm font-semibold mb-2">
                       Genres
                     </h3>
                     <ul className="flex flex-wrap gap-2">
-                      {movie.genres.map((genre) => (
+                      {tvShow.genres.map((genre) => (
                         <li
                           key={genre.id}
                           className="px-3 py-1 bg-netflix-red/20 text-netflix-red rounded-full text-xs md:text-sm border border-netflix-red/50"
@@ -122,60 +128,83 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
                     </ul>
                   </div>
                 )}
+
+                {/* Status */}
+                <div>
+                  <h3 className="text-netflix-gray text-xs md:text-sm font-semibold mb-1">
+                    Status
+                  </h3>
+                  <p className="text-white text-base md:text-lg">
+                    {tvShow.status}
+                  </p>
+                </div>
               </div>
 
               {/* Overview */}
-              {movie.overview && (
+              {tvShow.overview && (
                 <section>
                   <h2 className="text-lg md:text-xl font-semibold text-white mb-3">
                     Overview
                   </h2>
                   <p className="text-gray-300 leading-relaxed text-sm md:text-lg">
-                    {movie.overview}
+                    {tvShow.overview}
                   </p>
                 </section>
               )}
-
-              {/* Add to Watchlist Button */}
-              <div className="mt-6 md:mt-8">
-                <AddToWatchlistButton
-                  movieId={movieId}
-                  movieTitle={movie.title}
-                  isInWatchlist={false}
-                />
-              </div>
             </section>
           </div>
-
-          {/* Related Movies Section */}
-          <section className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-netflix-gray/20">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Related Movies</h2>
-            <RelatedMoviesSuspense movieId={movieId} />
-          </section>
 
           {/* Watch Now Section - Streaming Player */}
           <section className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-netflix-gray/20">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Watch Now</h2>
             <VidsrcStreamingPlayer
-              tmdbId={movieId}
-              contentType="movie"
+              tmdbId={tvId}
+              contentType="tv"
+              season={initialSeason}
+              episode={initialEpisode}
+              totalSeasons={tvShow.number_of_seasons}
+              totalEpisodesInSeason={episodeCount}
               videoQuality="HD"
             />
+          </section>
+
+          {/* Seasons List */}
+          <section className="mt-12 md:mt-16 pt-6 md:pt-8 border-t border-netflix-gray/20">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Seasons</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {tvShow.seasons
+                .filter((season) => season.season_number > 0)
+                .map((season) => (
+                  <div
+                    key={season.id}
+                    className="bg-gray-900/50 rounded-lg p-4 border border-gray-800 hover:border-netflix-red transition-colors"
+                  >
+                    <h3 className="text-white font-semibold mb-1">{season.name}</h3>
+                    <p className="text-gray-400 text-sm">
+                      {season.episode_count} Episode{season.episode_count !== 1 ? 's' : ''}
+                    </p>
+                    {season.air_date && (
+                      <p className="text-gray-500 text-xs mt-1">
+                        {new Date(season.air_date).getFullYear()}
+                      </p>
+                    )}
+                  </div>
+                ))}
+            </div>
           </section>
         </article>
       </main>
     );
   } catch (error) {
-    // Handle invalid movie IDs and other errors
     if (error instanceof APIResponseError && error.statusCode === 404) {
       return (
         <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
           <div className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Movie Not Found
+              TV Show Not Found
             </h1>
             <p className="text-netflix-gray text-base md:text-lg mb-8">
-              The movie you're looking for doesn't exist or has been removed.
+              The TV show you're looking for doesn't exist or has been removed.
             </p>
             <a
               href="/"
@@ -188,7 +217,6 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
       );
     }
 
-    // Handle network errors
     if (error instanceof NetworkError) {
       return (
         <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
@@ -197,7 +225,7 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
               Connection Error
             </h1>
             <p className="text-netflix-gray text-base md:text-lg mb-8">
-              Unable to load movie details. Please check your internet connection and try again.
+              Unable to load TV show details. Please check your internet connection and try again.
             </p>
             <a
               href="/"
@@ -210,15 +238,14 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
       );
     }
 
-    // Handle other errors
     return (
       <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Error Loading Movie
+            Error Loading TV Show
           </h1>
           <p className="text-netflix-gray text-base md:text-lg mb-8">
-            An unexpected error occurred while loading the movie details.
+            An unexpected error occurred while loading the TV show details.
           </p>
           <a
             href="/"
@@ -233,26 +260,29 @@ async function MovieDetailsContent({ movieId }: { movieId: number }) {
 }
 
 /**
- * Movie Details Page
- * Server component that fetches and displays detailed information about a specific movie
- * Implements error handling for invalid movie IDs and network errors
+ * TV Show Details Page
+ * Server component that fetches and displays detailed information about a specific TV show
  */
-export default async function MovieDetailsPage({
+export default async function TVShowDetailsPage({
   params,
-}: MovieDetailsPageProps) {
+  searchParams,
+}: TVShowDetailsPageProps) {
   const { id } = await params;
-  const movieId = parseInt(id, 10);
+  const { season: seasonParam, episode: episodeParam } = await searchParams;
+  
+  const tvId = parseInt(id, 10);
+  const initialSeason = seasonParam ? parseInt(seasonParam, 10) : 1;
+  const initialEpisode = episodeParam ? parseInt(episodeParam, 10) : 1;
 
-  // Validate that ID is a valid number
-  if (isNaN(movieId)) {
+  if (isNaN(tvId)) {
     return (
       <main className="min-h-screen bg-linear-to-b from-netflix-dark-secondary to-netflix-dark flex items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Invalid Movie ID
+            Invalid TV Show ID
           </h1>
           <p className="text-netflix-gray text-base md:text-lg mb-8">
-            The movie ID provided is not valid.
+            The TV show ID provided is not valid.
           </p>
           <a
             href="/"
@@ -273,12 +303,16 @@ export default async function MovieDetailsPage({
             <div className="inline-block">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-netflix-red"></div>
             </div>
-            <p className="text-netflix-gray text-base md:text-lg mt-4">Loading movie details...</p>
+            <p className="text-netflix-gray text-base md:text-lg mt-4">Loading TV show details...</p>
           </div>
         </main>
       }
     >
-      <MovieDetailsContent movieId={movieId} />
+      <TVShowDetailsContent 
+        tvId={tvId} 
+        initialSeason={initialSeason}
+        initialEpisode={initialEpisode}
+      />
     </Suspense>
   );
 }

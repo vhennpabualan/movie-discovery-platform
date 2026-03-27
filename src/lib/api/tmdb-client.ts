@@ -5,6 +5,7 @@
  */
 
 import { APIResponse, Movie, MovieDetails } from '@/types';
+import { TVShowDetails, TVSeasonDetails } from '@/types/tv-details';
 import { apiResponseSchema, movieDetailsSchema } from '@/lib/validation';
 import {
   APIResponseError,
@@ -422,5 +423,141 @@ export async function getMoviesByGenre(
   // Store in-flight request
   inFlightRequests.set(cacheKey, requestPromise);
 
+  return requestPromise;
+}
+
+/**
+ * Fetches detailed information for a specific TV show
+ * @param tvId - The TMDb TV show ID
+ * @returns TVShowDetails object with full TV show information
+ */
+export async function getTVShowDetails(tvId: number): Promise<TVShowDetails> {
+  const endpoint = `/tv/${tvId}`;
+  try {
+    const data = await makeRequest<TVShowDetails>(endpoint, {
+      next: { revalidate: 86400, tags: [`tv-details-${tvId}`] },
+    });
+    return data;
+  } catch (error) {
+    logError(error as Error, endpoint);
+    throw error;
+  }
+}
+
+/**
+ * Fetches detailed information for a specific season of a TV show
+ * @param tvId - The TMDb TV show ID
+ * @param seasonNumber - The season number
+ * @returns TVSeasonDetails object with season and episode information
+ */
+export async function getTVSeasonDetails(
+  tvId: number,
+  seasonNumber: number
+): Promise<TVSeasonDetails> {
+  const endpoint = `/tv/${tvId}/season/${seasonNumber}`;
+  try {
+    const data = await makeRequest<TVSeasonDetails>(endpoint, {
+      next: { revalidate: 86400, tags: [`tv-season-${tvId}-${seasonNumber}`] },
+    });
+    return data;
+  } catch (error) {
+    logError(error as Error, endpoint);
+    throw error;
+  }
+}
+
+/**
+ * Fetches similar/related TV shows for a specific TV show
+ * @param tvId - The TMDb TV show ID
+ * @param page - Page number for pagination (default: 1)
+ * @returns APIResponse containing similar TV shows
+ */
+export async function getSimilarTVShows(
+  tvId: number,
+  page: number = 1
+): Promise<APIResponse> {
+  const endpoint = `/tv/${tvId}/similar?page=${page}`;
+  try {
+    const data = await makeRequest<APIResponse>(endpoint, {
+      next: { revalidate: 86400, tags: [`similar-tv-${tvId}`] },
+    });
+    const validatedData = apiResponseSchema.parse(data) as APIResponse;
+    return validatedData;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'ZodError') {
+      const validationError = new ValidationError(
+        `Invalid API response format: ${error.message}`,
+        error
+      );
+      logError(validationError, endpoint);
+      throw validationError;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Searches for TV shows by query string
+ * @param query - The search query
+ * @param page - Page number for pagination (default: 1)
+ * @returns APIResponse containing search results
+ */
+export async function searchTVShows(
+  query: string,
+  page: number = 1
+): Promise<APIResponse> {
+  const encodedQuery = encodeURIComponent(query);
+  const cacheKey = `tv-${query}:${page}`;
+  const endpoint = `/search/tv?query=${encodedQuery}&page=${page}`;
+
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey)!;
+  }
+
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey)!;
+  }
+
+  const requestPromise = (async () => {
+    try {
+      const data = await makeRequest<any>(endpoint, {
+        next: { revalidate: 3600, tags: [`search-tv-${query}`] },
+      });
+
+      // Normalize TV show data to match Movie schema
+      const normalizedData = {
+        ...data,
+        results: (data.results || []).map((show: any) => ({
+          id: show.id,
+          title: show.name, // Map name to title
+          poster_path: show.poster_path,
+          release_date: show.first_air_date, // Map first_air_date to release_date
+          vote_average: show.vote_average,
+          overview: show.overview,
+          // Keep original fields for reference
+          name: show.name,
+          first_air_date: show.first_air_date,
+        })),
+      };
+
+      const validatedData = apiResponseSchema.parse(normalizedData) as APIResponse;
+      searchCache.set(cacheKey, validatedData);
+      return validatedData;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        const validationError = new ValidationError(
+          `Invalid API response format: ${error.message}`,
+          error
+        );
+        logError(validationError, endpoint);
+        throw validationError;
+      }
+      throw error;
+    } finally {
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightRequests.set(cacheKey, requestPromise);
   return requestPromise;
 }

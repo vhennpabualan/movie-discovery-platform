@@ -8,6 +8,8 @@ import { DOMAIN_PROVIDERS } from '../config/domains';
 import { SubtitleLanguageSelector } from './SubtitleLanguageSelector';
 import { StreamErrorBoundary } from './StreamErrorBoundary';
 import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
+import { SeasonEpisodeSelector } from './SeasonEpisodeSelector';
+import { VideoQualityBadge, type VideoQuality } from './VideoQualityBadge';
 
 /**
  * VidsrcStreamingPlayer Component
@@ -51,27 +53,50 @@ import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
 export function VidsrcStreamingPlayer({
   tmdbId,
   contentType,
-  season,
-  episode,
+  season: initialSeason,
+  episode: initialEpisode,
+  totalSeasons,
+  totalEpisodesInSeason,
   autoplay = false,
   customSubtitleUrl,
+  videoQuality,
   onError,
   onSuccess,
+  onSeasonChange,
+  onEpisodeChange,
 }: StreamingPlayerProps) {
   const [selectedDomain, setSelectedDomain] = useState<DomainProvider | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [currentSeason, setCurrentSeason] = useState(initialSeason);
+  const [currentEpisode, setCurrentEpisode] = useState(initialEpisode);
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
   const { loading, error, embedURL, retry, retryWithNextDomain, currentDomain } = useVidsrcPlayer(
     tmdbId,
     contentType,
-    season,
-    episode,
+    currentSeason,
+    currentEpisode,
     language,
     autoplay,
     customSubtitleUrl,
     undefined,
     selectedDomain
   );
+
+  // Handle season change
+  const handleSeasonChange = (newSeason: number) => {
+    setCurrentSeason(newSeason);
+    if (onSeasonChange) {
+      onSeasonChange(newSeason);
+    }
+  };
+
+  // Handle episode change
+  const handleEpisodeChange = (newEpisode: number) => {
+    setCurrentEpisode(newEpisode);
+    if (onEpisodeChange) {
+      onEpisodeChange(newEpisode);
+    }
+  };
 
   // Update selected domain when current domain changes
   useEffect(() => {
@@ -97,10 +122,25 @@ export function VidsrcStreamingPlayer({
   return (
     <StreamErrorBoundary error={error} onRetry={retry}>
       <div className="w-full">
-        {/* TV Show Season/Episode Display */}
-        {contentType === 'tv' && season !== undefined && episode !== undefined && (
-          <div className="mb-4 text-sm text-gray-400">
-            Season {season}, Episode {episode}
+        {/* Video Quality Badge */}
+        {videoQuality && (
+          <div className="mb-3">
+            <VideoQualityBadge quality={videoQuality} />
+          </div>
+        )}
+
+        {/* TV Show Season/Episode Selector */}
+        {contentType === 'tv' && totalSeasons && totalEpisodesInSeason && (
+          <div className="mb-4 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
+            <SeasonEpisodeSelector
+              selectedSeason={currentSeason}
+              selectedEpisode={currentEpisode}
+              totalSeasons={totalSeasons}
+              totalEpisodesInSeason={totalEpisodesInSeason}
+              onSeasonChange={handleSeasonChange}
+              onEpisodeChange={handleEpisodeChange}
+              disabled={loading}
+            />
           </div>
         )}
 
@@ -163,12 +203,12 @@ export function VidsrcStreamingPlayer({
           <div className="w-full bg-black rounded-lg overflow-hidden">
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
-                src={embedURL} /* 1. Use embedURL directly, bypass the Blob */
+                src={embedURL}
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                /* 2. COMPLETELY REMOVE the sandbox attribute */
-                referrerPolicy="origin" /* 3. Match your Next.js config headers */
+                sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+                referrerPolicy="no-referrer"
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                 loading="lazy"

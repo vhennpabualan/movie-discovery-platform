@@ -10,6 +10,8 @@ The Vidsrc streaming integration enables users to stream movies and TV shows dir
 
 - **Multiple Domain Providers**: Automatic fallback between 4 domain providers (vidsrc-embed.ru, vidsrc-embed.su, vidsrcme.su, vsrc.su)
 - **Subtitle Language Selection**: Support for 9 languages with session persistence
+- **Season & Episode Selection**: Interactive selector for TV shows with prev/next navigation
+- **Video Quality Badges**: Visual indicators for video quality (HD, CAM, 4K, etc.)
 - **Responsive Design**: Optimized for mobile, tablet, and desktop viewports
 - **Security**: Iframe sandboxing, URL validation, and referrer policy enforcement
 - **Error Handling**: Comprehensive error handling with user-friendly messages
@@ -49,6 +51,25 @@ export function TVShowDetailsPage({ showId, season, episode }: Props) {
       contentType="tv"
       season={season}
       episode={episode}
+      totalSeasons={5}
+      totalEpisodesInSeason={10}
+      videoQuality="HD"
+    />
+  );
+}
+```
+
+### With Video Quality Badge
+
+```typescript
+import { VidsrcStreamingPlayer } from '@/features/vidsrc-streaming/components';
+
+export function MovieDetailsPage({ movieId }: { movieId: number }) {
+  return (
+    <VidsrcStreamingPlayer
+      tmdbId={movieId}
+      contentType="movie"
+      videoQuality="4K"  // Options: 'HD', 'CAM', 'TS', 'TC', 'DVDRIP', 'WEBRIP', 'BLURAY', '4K'
     />
   );
 }
@@ -118,17 +139,32 @@ interface StreamingPlayerProps {
   /** Episode number (required for TV content) */
   episode?: number;
 
+  /** Total number of seasons (for TV shows) */
+  totalSeasons?: number;
+
+  /** Total number of episodes in the current season (for TV shows) */
+  totalEpisodesInSeason?: number;
+
   /** Whether to autoplay the video (optional, defaults to false) */
   autoplay?: boolean;
 
   /** Custom subtitle URL to use (optional) */
   customSubtitleUrl?: string;
 
+  /** Video quality indicator (optional, for display purposes) */
+  videoQuality?: 'HD' | 'CAM' | 'TS' | 'TC' | 'DVDRIP' | 'WEBRIP' | 'BLURAY' | '4K';
+
   /** Callback fired when an error occurs */
   onError?: (error: StreamingError) => void;
 
   /** Callback fired when streaming loads successfully */
   onSuccess?: () => void;
+
+  /** Callback fired when season changes (TV shows only) */
+  onSeasonChange?: (season: number) => void;
+
+  /** Callback fired when episode changes (TV shows only) */
+  onEpisodeChange?: (episode: number) => void;
 }
 ```
 
@@ -171,6 +207,91 @@ interface SubtitleLanguageSelectorProps {
 - Russian (ru)
 - Japanese (ja)
 - Chinese (zh)
+
+### SeasonEpisodeSelector
+
+Component for selecting season and episode for TV shows.
+
+#### Props
+
+```typescript
+interface SeasonEpisodeSelectorProps {
+  /** Current selected season */
+  selectedSeason: number;
+
+  /** Current selected episode */
+  selectedEpisode: number;
+
+  /** Total number of seasons available */
+  totalSeasons: number;
+
+  /** Total number of episodes in the selected season */
+  totalEpisodesInSeason: number;
+
+  /** Callback when season changes */
+  onSeasonChange: (season: number) => void;
+
+  /** Callback when episode changes */
+  onEpisodeChange: (episode: number) => void;
+
+  /** Whether the selector is disabled */
+  disabled?: boolean;
+}
+```
+
+#### Features
+
+- Dropdown selectors for season and episode
+- Automatic episode reset when season changes
+- Quick navigation buttons (Prev/Next)
+- Responsive layout for mobile and desktop
+- Disabled state support
+
+### VideoQualityBadge
+
+Component for displaying video quality indicators.
+
+#### Props
+
+```typescript
+interface VideoQualityBadgeProps {
+  /** The quality level to display */
+  quality?: 'HD' | 'CAM' | 'TS' | 'TC' | 'DVDRIP' | 'WEBRIP' | 'BLURAY' | '4K';
+
+  /** Additional CSS classes */
+  className?: string;
+}
+```
+
+#### Quality Levels
+
+- **4K / BLURAY**: Purple badge (highest quality)
+- **HD / WEBRIP**: Green badge (high quality)
+- **DVDRIP**: Blue badge (medium quality)
+- **TS / TC**: Yellow badge (low quality)
+- **CAM**: Red badge (lowest quality)
+
+### VideoQualitySelector
+
+Component for selecting video quality (when multiple sources are available).
+
+#### Props
+
+```typescript
+interface VideoQualitySelectorProps {
+  /** Available quality options */
+  availableQualities: VideoQuality[];
+
+  /** Currently selected quality */
+  selectedQuality: VideoQuality;
+
+  /** Callback when quality changes */
+  onQualityChange: (quality: VideoQuality) => void;
+
+  /** Whether the selector is disabled */
+  disabled?: boolean;
+}
+```
 
 ### StreamErrorBoundary
 

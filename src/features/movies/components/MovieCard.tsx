@@ -6,7 +6,7 @@ import { Movie } from '@/types/movie';
 import { useViewTransition } from '@/lib/hooks/useViewTransition';
 
 interface MovieCardProps {
-  movie: Movie & { vote_average?: number };
+  movie: Movie & { vote_average?: number; media_type?: 'movie' | 'tv' };
   onClick?: (movieId: number) => void;
   isInWatchlist?: boolean;
   priority?: boolean;
@@ -32,8 +32,10 @@ export function MovieCard({
     // Call onClick callback first (if provided)
     onClick?.(movie.id);
     
-    // Navigate with transition (has built-in error handling)
-    navigateWithTransition(`/movies/${movie.id}`);
+    // Navigate based on media type
+    const mediaType = movie.media_type || 'movie';
+    const path = mediaType === 'tv' ? `/tv/${movie.id}` : `/movies/${movie.id}`;
+    navigateWithTransition(path);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -46,7 +48,11 @@ export function MovieCard({
       
       // Call onClick callback first (if provided)
       onClick?.(movie.id);
-      navigateWithTransition(`/movies/${movie.id}`);
+      
+      // Navigate based on media type
+      const mediaType = movie.media_type || 'movie';
+      const path = mediaType === 'tv' ? `/tv/${movie.id}` : `/movies/${movie.id}`;
+      navigateWithTransition(path);
     }
   };
 

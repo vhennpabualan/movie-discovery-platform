@@ -3,13 +3,20 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { searchMovies } from '@/lib/api/tmdb-client';
+import { searchMovies, searchTVShows } from '@/lib/api/tmdb-client';
 import { Movie } from '@/types/movie';
 import { useSearchParams } from '../hooks/useSearchParams';
 
+interface SearchResult extends Movie {
+  media_type?: 'movie' | 'tv';
+  name?: string;
+  first_air_date?: string;
+  release_date?: string;
+}
+
 export function SearchBar() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Movie[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -35,12 +42,27 @@ export function SearchBar() {
     setError(null);
 
     try {
-      const response = await searchMovies(searchQuery);
-      setResults(response.results || []);
+      const [movieResponse, tvResponse] = await Promise.all([
+        searchMovies(searchQuery),
+        searchTVShows(searchQuery),
+      ]);
+
+      const allResults: SearchResult[] = [
+        ...(movieResponse.results || []).map((item: any) => ({
+          ...item,
+          media_type: 'movie',
+        })),
+        ...(tvResponse.results || []).map((item: any) => ({
+          ...item,
+          media_type: 'tv',
+        })),
+      ];
+
+      setResults(allResults);
       setIsOpen(true);
       setSelectedIndex(-1);
     } catch (err) {
-      setError('Failed to search movies. Please try again.');
+      setError('Failed to search. Please try again.');
       setResults([]);
       console.error('Search error:', err);
     } finally {
@@ -104,7 +126,7 @@ export function SearchBar() {
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0) {
-          navigateToMovie(results[selectedIndex].id);
+          navigateToItem(results[selectedIndex]);
         }
         break;
       case 'Escape':
@@ -117,19 +139,21 @@ export function SearchBar() {
     }
   };
 
-  // Navigate to movie details page
-  const navigateToMovie = (movieId: number) => {
+  // Navigate to movie/TV details page
+  const navigateToItem = (item: SearchResult) => {
     if (isNavigating) return; // Prevent double clicks
     setIsNavigating(true);
-    router.push(`/movies/${movieId}`);
+    const mediaType = item.media_type || 'movie';
+    const path = mediaType === 'tv' ? `/tv/${item.id}` : `/movies/${item.id}`;
+    router.push(path);
     // Note: The useEffect with pathname will handle resetting state
   };
 
   // Handle result click
-  const handleResultClick = (e: React.MouseEvent, movieId: number) => {
+  const handleResultClick = (e: React.MouseEvent, item: SearchResult) => {
     e.preventDefault();
     e.stopPropagation();
-    navigateToMovie(movieId);
+    navigateToItem(item);
   };
 
   // Close dropdown when clicking outside
@@ -175,8 +199,8 @@ export function SearchBar() {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => query && results.length > 0 && setIsOpen(true)}
-          placeholder="Search movies..."
-          aria-label="Search for movies"
+          placeholder="Search movies and TV shows..."
+          aria-label="Search for movies and TV shows"
           aria-autocomplete="list"
           aria-controls="search-results"
           aria-expanded={isOpen}
@@ -211,12 +235,12 @@ export function SearchBar() {
               <div className="p-4 text-red-400 text-sm">{error}</div>
             ) : results.length > 0 ? (
               <ul className="flex flex-col">
-                {results.map((movie, index) => (
+                {results.map((item, index) => (
                   <li
-                    key={movie.id}
+                    key={`${item.media_type || 'movie'}-${item.id}`}
                     role="option"
                     aria-selected={index === selectedIndex}
-                    onClick={(e) => handleResultClick(e, movie.id)}
+                    onClick={(e) => handleResultClick(e, item)}
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={`flex items-center gap-4 p-3 border-b border-white/5 cursor-pointer transition-colors ${
                       index === selectedIndex
@@ -226,9 +250,9 @@ export function SearchBar() {
                   >
                     {/* Poster */}
                     <div className="relative w-12 h-16 shrink-0 bg-gray-800 rounded">
-                      {movie.poster_path && (
+                      {item.poster_path && (
                         <Image
-                          src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
+                          src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
                           alt=""
                           fill
                           sizes="48px"
@@ -239,13 +263,16 @@ export function SearchBar() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-semibold text-sm truncate">
-                        {movie.title}
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-white font-semibold text-sm truncate">
+                          {item.title}
+                        </h3>
+                        <span className="text-xs px-2 py-0.5 bg-netflix-red/20 text-netflix-red rounded whitespace-nowrap">
+                          {item.media_type === 'tv' ? 'TV' : 'Movie'}
+                        </span>
+                      </div>
                       <p className="text-gray-400 text-xs mt-1">
-                        {movie.release_date
-                          ? movie.release_date.split('-')[0]
-                          : 'N/A'}
+                        {item.release_date?.split('-')[0] || 'N/A'}
                       </p>
                     </div>
                   </li>
@@ -253,7 +280,7 @@ export function SearchBar() {
               </ul>
             ) : (
               <div className="p-8 text-gray-400 text-sm text-center">
-                No movies found for &quot;{query}&quot;
+                No results found for &quot;{query}&quot;
               </div>
             )}
           </div>
