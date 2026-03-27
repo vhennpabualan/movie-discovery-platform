@@ -610,8 +610,8 @@ describe('VidsrcStreamingPlayer', () => {
       expect(mockUseVidsrcPlayer).toHaveBeenCalledWith(
         550,
         'movie',
-        undefined,
-        undefined,
+        1,
+        1,
         'en',
         true,
         undefined,
@@ -646,8 +646,8 @@ describe('VidsrcStreamingPlayer', () => {
       expect(mockUseVidsrcPlayer).toHaveBeenCalledWith(
         550,
         'movie',
-        undefined,
-        undefined,
+        1,
+        1,
         'en',
         false,
         customUrl,

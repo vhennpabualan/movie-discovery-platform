@@ -67,8 +67,8 @@ export function VidsrcStreamingPlayer({
 }: StreamingPlayerProps) {
   const [selectedDomain, setSelectedDomain] = useState<DomainProvider | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [currentSeason, setCurrentSeason] = useState(initialSeason);
-  const [currentEpisode, setCurrentEpisode] = useState(initialEpisode);
+  const [currentSeason, setCurrentSeason] = useState(initialSeason ?? 1);
+  const [currentEpisode, setCurrentEpisode] = useState(initialEpisode ?? 1);
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
   const { loading, error, embedURL, retry, retryWithNextDomain, currentDomain } = useVidsrcPlayer(
     tmdbId,
