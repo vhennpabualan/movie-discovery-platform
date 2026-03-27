@@ -16,10 +16,15 @@ import type { DomainProvider } from '../types/index';
  * Based on official Vidsrc API documentation.
  */
 const ALLOWED_DOMAINS: DomainProvider[] = [
+  'vidsrc.net',
+  'embed.su',
+  'multiembed.mov',
+  'www.2embed.cc',
   'vidsrc-embed.ru',
   'vidsrc-embed.su',
   'vidsrcme.su',
   'vsrc.su',
+  'vsembed.ru',
 ];
 
 /**
@@ -63,12 +68,38 @@ export function isValidEmbedURL(url: string): boolean {
       return false;
     }
 
-    // Check that URL contains /embed/ path
-    if (!parsedUrl.pathname.includes('/embed/')) {
+    // multiembed.mov has unique format: /directstream.php?video_id=
+    if (domain === 'multiembed.mov') {
+      return parsedUrl.pathname.includes('/directstream.php') && 
+             parsedUrl.searchParams.has('video_id');
+    }
+
+    // For path-based URLs (embed.su), validate path structure
+    if (domain === 'embed.su') {
+      // Path should be /embed/movie/{id} or /embed/tv/{id}/{season}/{episode}
+      const pathParts = parsedUrl.pathname.split('/').filter(p => p);
+      if (pathParts.length < 3) {
+        return false; // Need at least: embed, type, id
+      }
+      return true;
+    }
+
+    // For 2embed.cc, validate path structure
+    if (domain === '2embed.cc' || domain === 'www.2embed.cc') {
+      // Path should be /embed/{id} or /embedtv/{id}
+      const pathParts = parsedUrl.pathname.split('/').filter(p => p);
+      if (pathParts.length < 2) {
+        return false;
+      }
+      return true;
+    }
+
+    // Check that URL contains /embed/ path for query-based domains
+    if (!parsedUrl.pathname.includes('/embed')) {
       return false;
     }
 
-    // Check that URL has tmdb parameter with a non-empty value
+    // For query-based URLs (vidsrc.net + legacy mirrors), check tmdb parameter
     const tmdbParam = parsedUrl.searchParams.get('tmdb');
     if (!tmdbParam || tmdbParam.trim() === '') {
       return false;

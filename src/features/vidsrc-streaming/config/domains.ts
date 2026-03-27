@@ -16,8 +16,13 @@ import type { DomainProvider } from '../types';
  * @type {DomainProvider[]}
  */
 export const DOMAIN_PROVIDERS: DomainProvider[] = [
+  'www.2embed.cc',    // first and this is the only runninng server that is not being blocked
+  'vidsrc.net',       // second (most reliable)
+  'embed.su',         // third
+  'multiembed.mov',   // Fourth
+  'vidsrc-embed.su',  // Fallbacks
+  'vsembed.ru',
   'vidsrc-embed.ru',
-  'vidsrc-embed.su',
   'vidsrcme.su',
   'vsrc.su',
 ];

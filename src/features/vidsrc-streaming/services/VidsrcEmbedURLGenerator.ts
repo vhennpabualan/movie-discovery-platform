@@ -13,11 +13,30 @@ import type {
 } from '../types/index';
 
 const ALLOWED_DOMAINS: DomainProvider[] = [
+  'vidsrc.net',
+  'embed.su',
+  'multiembed.mov',
+  'www.2embed.cc',
   'vidsrc-embed.ru',
   'vidsrc-embed.su',
   'vidsrcme.su',
   'vsrc.su',
+  'vsembed.ru',
 ];
+
+// Path-based: /embed/movie/{id}
+const PATH_BASED_DOMAINS: DomainProvider[] = ['embed.su'];
+
+// Query-based: /embed/movie?tmdb={id}
+const QUERY_BASED_DOMAINS: DomainProvider[] = [
+  'vidsrc.net',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vidsrcme.su',
+  'vsrc.su',
+  'vsembed.ru',
+];
+
 const TMDB_ID_MIN = 1;
 const TMDB_ID_MAX = 2147483647;
 
@@ -39,6 +58,32 @@ export class VidsrcEmbedURLGenerator {
     this.validateTmdbId(config.tmdbId);
     this.validateDomain(config.domain);
 
+    // multiembed.mov has a completely unique format
+    if (config.domain === 'multiembed.mov') {
+      return `https://multiembed.mov/directstream.php?video_id=${config.tmdbId}&tmdb=1`;
+    }
+
+    // 2embed.cc path format
+    if (config.domain === 'www.2embed.cc') {
+      return `https://www.2embed.cc/embed/${config.tmdbId}`;
+    }
+
+    // Path-based domains: embed.su
+    if (PATH_BASED_DOMAINS.includes(config.domain as DomainProvider)) {
+      const url = new URL(`https://${config.domain}/embed/movie/${config.tmdbId}`);
+      if (config.subtitleLanguage) {
+        url.searchParams.set('ds_lang', config.subtitleLanguage);
+      }
+      if (config.autoplay) {
+        url.searchParams.set('autoplay', '1');
+      }
+      if (config.customSubtitleUrl) {
+        url.searchParams.set('sub_url', config.customSubtitleUrl);
+      }
+      return url.toString();
+    }
+
+    // Query-based domains (vidsrc.net + legacy mirrors)
     const url = new URL(`https://${config.domain}/embed/movie`);
     url.searchParams.set('tmdb', config.tmdbId.toString());
 
@@ -72,6 +117,37 @@ export class VidsrcEmbedURLGenerator {
       throw new Error('Season and episode are required for TV content');
     }
 
+    // multiembed.mov TV format
+    if (config.domain === 'multiembed.mov') {
+      return `https://multiembed.mov/directstream.php?video_id=${config.tmdbId}&tmdb=1&s=${config.season}&e=${config.episode}`;
+    }
+
+    // 2embed.cc TV format
+    if (config.domain === 'www.2embed.cc') {
+      return `https://www.2embed.cc/embedtv/${config.tmdbId}&s=${config.season}&e=${config.episode}`;
+    }
+
+    // Path-based: embed.su
+    if (PATH_BASED_DOMAINS.includes(config.domain as DomainProvider)) {
+      const url = new URL(
+        `https://${config.domain}/embed/tv/${config.tmdbId}/${config.season}/${config.episode}`
+      );
+      if (config.subtitleLanguage) {
+        url.searchParams.set('ds_lang', config.subtitleLanguage);
+      }
+      if (config.autoplay) {
+        url.searchParams.set('autoplay', '1');
+      }
+      if (config.autonext) {
+        url.searchParams.set('autonext', '1');
+      }
+      if (config.customSubtitleUrl) {
+        url.searchParams.set('sub_url', config.customSubtitleUrl);
+      }
+      return url.toString();
+    }
+
+    // Query-based: vidsrc.net + legacy mirrors
     const url = new URL(`https://${config.domain}/embed/tv`);
     url.searchParams.set('tmdb', config.tmdbId.toString());
     url.searchParams.set('season', config.season.toString());

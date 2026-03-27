@@ -207,13 +207,13 @@ export function VidsrcStreamingPlayer({
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
                 referrerPolicy="no-referrer"
                 allowFullScreen
                 allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                 loading="lazy"
                 onLoad={() => {
                   console.log('[Vidsrc] Player loaded successfully');
+                  console.log('[Vidsrc] Embed URL:', embedURL);
                 }}
                 onError={() => {
                   console.warn('[Vidsrc] Iframe failed to load, retrying with next domain');

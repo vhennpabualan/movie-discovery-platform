@@ -12,10 +12,15 @@
  * Based on official Vidsrc API documentation.
  */
 export type DomainProvider =
+  | 'vidsrc.net'
+  | 'embed.su'
+  | 'multiembed.mov'
+  | 'www.2embed.cc'
   | 'vidsrc-embed.ru'
   | 'vidsrc-embed.su'
   | 'vidsrcme.su'
-  | 'vsrc.su';
+  | 'vsrc.su'
+  | 'vsembed.ru';
 
 /**
  * Health status information for a domain provider.
