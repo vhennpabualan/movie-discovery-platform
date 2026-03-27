@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://vidsrc.net https://embed.su https://www.2embed.cc https://multiembed.mov https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com https://theajack.github.io;",
+            value: "frame-src 'self' https://vidsrc.net https://www.2embed.cc https://multiembed.mov https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com https://theajack.github.io;",
           },
           {
             key: "Referrer-Policy",
@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://vidsrc.net https://embed.su https://www.2embed.cc https://multiembed.mov https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com https://theajack.github.io;",
+            value: "frame-src 'self' https://vidsrc.net https://www.2embed.cc https://multiembed.mov https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com https://theajack.github.io;",
           },
           {
             key: "Referrer-Policy",
