@@ -30,6 +30,30 @@ const config: Config = {
         'tablet': { 'min': '640px', 'max': '1023px' },
         'desktop': { 'min': '1024px' },
       },
+      keyframes: {
+        slideDown: {
+          '0%': { transform: 'translateY(-10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        slideUp: {
+          '0%': { transform: 'translateY(10px)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+      },
+      animation: {
+        'slide-down': 'slideDown 0.2s ease-out forwards',
+        'slide-up': 'slideUp 0.2s ease-out forwards',
+        'fade-in': 'fadeIn 0.2s ease-out forwards',
+        'scale-in': 'scaleIn 0.2s ease-out forwards',
+      },
     },
   },
   darkMode: 'selector',

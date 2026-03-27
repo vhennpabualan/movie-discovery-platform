@@ -94,8 +94,7 @@ export function MobileNav() {
           />
           
           {/* Menu Panel */}
-          <div className="fixed top-[73px] left-0 right-0 bg-netflix-dark border-b border-netflix-gray/20 shadow-2xl z-56 animate-slideDown">
-            <nav className="flex flex-col p-6 gap-1">
+            <div className="fixed top-[73px] left-0 right-0 bg-[#0f0f0f] border-b border-netflix-gray/20 shadow-2xl z-56 animate-slideDown">            <nav className="flex flex-col p-6 gap-1">
               <Link
                 href="/search"
                 onClick={closeMenu}
