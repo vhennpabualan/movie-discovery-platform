@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getAiringAnime, getTopAnime, getPopularAnime } from '@/lib/api/jikan-client';
 import { AnimeCard } from '@/features/anime/components/AnimeCard';
+import { AnimeHero } from '@/features/anime/components/AnimeHero';
 
 export const revalidate = 3600;
 
@@ -11,50 +12,10 @@ export default async function AnimePage() {
     getPopularAnime(),
   ]);
 
-  const featuredAnime = airing.data[0];
-
   return (
     <main className="min-h-screen bg-netflix-dark">
 
-      {/* Hero - featured airing anime */}
-      {featuredAnime && (
-        <section
-          className="relative w-full h-[400px] md:h-[500px] overflow-hidden"
-          style={{
-            backgroundImage: `url(${featuredAnime.images.jpg.large_image_url})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center top',
-          }}
-        >
-          <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/60 to-transparent" />
-          <div className="absolute inset-0 bg-linear-to-t from-netflix-dark via-transparent to-transparent" />
-          <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-16 max-w-2xl">
-            <span className="text-netflix-red font-semibold text-sm mb-2">Now Airing</span>
-            <h1 className="text-3xl md:text-5xl font-black text-white mb-3 leading-tight">
-              {featuredAnime.title_english || featuredAnime.title}
-            </h1>
-            {featuredAnime.score && (
-              <span className="bg-netflix-red text-white text-xs font-bold px-2 py-0.5 rounded w-fit mb-3">
-                ★ {featuredAnime.score.toFixed(1)}
-              </span>
-            )}
-            {featuredAnime.synopsis && (
-              <p className="text-white/80 text-sm leading-relaxed line-clamp-3 mb-6">
-                {featuredAnime.synopsis}
-              </p>
-            )}
-            <Link
-              href={`/anime/${featuredAnime.mal_id}`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-netflix-red hover:bg-red-700 text-white font-semibold rounded-lg transition-colors text-sm w-fit"
-            >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              View Details
-            </Link>
-          </div>
-        </section>
-      )}
+      <AnimeHero animeList={airing.data.slice(0, 5)} />
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 flex flex-col gap-14">
 

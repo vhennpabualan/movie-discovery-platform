@@ -104,19 +104,19 @@ export function PerformanceDashboard() {
                     </span>
                   </div>
                 )}
-                {webVitals?.fid && (
+                {webVitals?.inp && (
                   <div className="flex justify-between">
-                    <span>FID:</span>
+                    <span>INP:</span>
                     <span
                       className={
-                        webVitals.fid.rating === 'good'
+                        webVitals.inp.rating === 'good'
                           ? 'text-green-400'
-                          : webVitals.fid.rating === 'needs-improvement'
+                          : webVitals.inp.rating === 'needs-improvement'
                             ? 'text-yellow-400'
                             : 'text-red-400'
                       }
                     >
-                      {webVitals.fid.value != null ? webVitals.fid.value.toFixed(0) : '—'}ms ({webVitals.fid.rating})
+                      {webVitals.inp.value != null ? webVitals.inp.value.toFixed(0) : '—'}ms ({webVitals.inp.rating})
                     </span>
                   </div>
                 )}

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/features/ui/components/Header";
 import { PerformanceDashboard } from "@/features/ui/components/PerformanceDashboard";
@@ -15,14 +15,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: "Movie Discovery Platform",
   description: "Discover, search, and manage your favorite movies",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
   themeColor: "#0f0f0f",
 };
 
@@ -48,11 +50,14 @@ export default function RootLayout({
         <main className="flex-1 bg-netflix-dark pt-[73px] md:pt-[97px]">
           {children}
         </main>
-
-        {/* Footer */}
+        {/* footer */}
         <footer className="bg-netflix-dark-secondary border-t border-netflix-gray/20 py-8 px-4">
           <div className="max-w-7xl mx-auto text-center text-netflix-gray text-sm">
-            <p>&copy; 2026 Movie Discovery Platform. All rights reserved. Personal use.</p>
+            <div className="flex justify-center gap-4 mb-4">
+              <a href="/dmca" className="hover:text-white transition-colors">DMCA</a>
+              <a href="mailto:pabsvt2015@gmail.com" className="hover:text-white transition-colors">Contact</a>
+            </div>
+            <p>&copy; {new Date().getFullYear()} Movie Discovery Platform. Personal use only.</p>
           </div>
         </footer>
       </body>

@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   images: {
+    deviceSizes: [640, 1080, 1920],
     remotePatterns: [
       {
         protocol: "https",
@@ -57,7 +58,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://vidnest.fun;",
+            value: "frame-src 'self' https://vidnest.fun https://vidsrc.cc https://vidsrc.icu;",
           },
           {
             key: "Referrer-Policy",

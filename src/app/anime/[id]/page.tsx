@@ -163,11 +163,6 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
             )}
             {anilistId ? (
               <div>
-                <div className="mb-3 text-sm text-gray-400">
-                  <span>MAL ID: {malId}</span>
-                  <span className="mx-2">•</span>
-                  <span>AniList ID: {anilistId}</span>
-                </div>
                 <AnimeStreamingPlayer
                   anilistId={anilistId}
                   episode={initialEpisode}

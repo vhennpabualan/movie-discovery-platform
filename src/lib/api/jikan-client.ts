@@ -61,7 +61,7 @@ export interface JikanPaginatedResponse<T> {
 
 async function jikanRequest<T>(endpoint: string): Promise<T> {
   const url = `${JIKAN_BASE_URL}${endpoint}`;
-  console.log(`[Jikan] Requesting: ${url}`);
+  // console.log(`[Jikan] Requesting: ${url}`);
   
   // Shorter cache for anime details and episodes (15 minutes for airing shows)
   const cacheTime = endpoint.includes('/episodes') || endpoint.includes('/full') ? 900 : 3600;
@@ -70,7 +70,7 @@ async function jikanRequest<T>(endpoint: string): Promise<T> {
     next: { revalidate: cacheTime },
   });
 
-  console.log(`[Jikan] Response status: ${res.status} for ${endpoint}`);
+  // console.log(`[Jikan] Response status: ${res.status} for ${endpoint}`);
 
   if (!res.ok) {
     const errorText = await res.text();
