@@ -1,73 +1,69 @@
-import Link from 'next/link';
-import { TrendingMoviesSuspense } from '@/features/movies/components/TrendingMoviesSuspense';
+import { HeroSection } from '@/features/ui/components/HeroSection';
+import { CategoryList } from '@/features/movies/components/CategoryList';
 import { GenreBrowser } from '@/features/movies/components/GenreBrowser';
-import { getGenres } from '@/lib/api/tmdb-client';
+import {
+  getMoviesByTrending,
+  getNowPlaying,
+  getPopularMovies,
+  getTopRated,
+  getTopAiringTV,
+  getKDramas,
+  getAnime,
+  getGenres,
+} from '@/lib/api/tmdb-client';
 
-/**
- * ISR Configuration: Revalidate every hour (3600 seconds)
- * This allows the page to be statically generated and updated incrementally
- * without requiring a full rebuild
- */
 export const revalidate = 3600;
 
 export default async function Home() {
-  // Fetch genres for the genre browser
-  const genres = await getGenres();
+  const [trending, nowPlaying, popular, topRated, topTV, kdramas, anime, genres] =
+    await Promise.all([
+      getMoviesByTrending('day'),
+      getNowPlaying(),
+      getPopularMovies(),
+      getTopRated(),
+      getTopAiringTV(),
+      getKDramas(),
+      getAnime(),
+      getGenres(),
+    ]);
 
   return (
     <main className="flex flex-col min-h-screen bg-netflix-dark">
-      {/* Welcome Section */}
-      <section className="w-full py-12 md:py-16 px-4 md:px-8 bg-linear-to-b from-netflix-dark-secondary to-netflix-dark">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Welcome to MovieFlix
-          </h1>
-          <p className="text-lg md:text-xl text-netflix-gray mb-8 max-w-2xl">
-            Discover trending movies, search for your favorites, and build your personal watchlist. 
-            Explore thousands of films from around the world.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/search"
-              className="inline-flex items-center justify-center px-6 py-3 bg-netflix-red hover:bg-red-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark"
-            >
-              Search Movies
-            </Link>
-            <Link
-              href="/browse"
-              className="inline-flex items-center justify-center px-6 py-3 bg-netflix-dark-secondary hover:bg-netflix-gray/20 text-white font-semibold rounded-lg border border-netflix-gray/30 transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark"
-            >
-              Browse by Genre
-            </Link>
-            <Link
-              href="/watchlist"
-              className="inline-flex items-center justify-center px-6 py-3 bg-netflix-dark-secondary hover:bg-netflix-gray/20 text-white font-semibold rounded-lg border border-netflix-gray/30 transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark"
-            >
-              View Watchlist
-            </Link>
+
+      {/* ── Hero Spotlight (auto-cycles top 5 trending) ── */}
+      <HeroSection movies={trending.results} />
+
+      {/* ── Category Lists ── */}
+      <section className="w-full py-10 px-4 md:px-8 bg-netflix-dark-secondary/20">
+        <div className="max-w-7xl mx-auto flex flex-col gap-10">
+
+          {/* Row 1 — Movies */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <CategoryList title="Now Playing" movies={nowPlaying.results} viewMoreHref="/browse/now_playing" />
+            <CategoryList title="Most Popular" movies={popular.results}   viewMoreHref="/browse/popular" />
+            <CategoryList title="Top Rated"   movies={topRated.results}   viewMoreHref="/browse/top_rated" />
           </div>
+
+          {/* Divider */}
+          <div className="border-t border-white/10" />
+
+          {/* Row 2 — TV / Anime / K-Drama */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <CategoryList title="Top TV Airing" movies={topTV.results}   viewMoreHref="/browse/top_tv"  isTv={true} />
+            <CategoryList title="K-Drama"       movies={kdramas.results} viewMoreHref="/browse/kdrama"  isTv={true} />
+            <CategoryList title="Anime"         movies={anime.results}   viewMoreHref="/browse/anime"   isTv={true} />
+          </div>
+
         </div>
       </section>
 
-      {/* Trending Movies Section */}
-      <section className="w-full py-12 md:py-16 px-4 md:px-8">
+      {/* ── Genre Browser ── */}
+      <section className="w-full py-10 px-4 md:px-8">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
-            Trending Now
-          </h2>
-          <TrendingMoviesSuspense />
-        </div>
-      </section>
-
-      {/* Genre Browser Section */}
-      <section className="w-full py-12 md:py-16 px-4 md:px-8 bg-netflix-dark-secondary/30">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
-            Browse by Genre
-          </h2>
           <GenreBrowser genres={genres} />
         </div>
       </section>
+
     </main>
   );
 }

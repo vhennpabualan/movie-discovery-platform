@@ -561,3 +561,108 @@ export async function searchTVShows(
   inFlightRequests.set(cacheKey, requestPromise);
   return requestPromise;
 }
+export async function getNowPlaying(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/now_playing?page=${page}`, {
+    next: { revalidate: 3600, tags: ['now-playing'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getPopularMovies(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/popular?page=${page}`, {
+    next: { revalidate: 3600, tags: ['popular-movies'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getTopRated(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/top_rated?page=${page}`, {
+    next: { revalidate: 3600, tags: ['top-rated'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getUpcoming(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/upcoming?page=${page}`, {
+    next: { revalidate: 3600, tags: ['upcoming'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getTopAiringTV(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<any>(`/tv/on_the_air?page=${page}`, {
+    next: { revalidate: 3600, tags: ['top-airing-tv'] },
+  });
+
+  // Normalize TV fields to match Movie schema
+  const normalized = {
+    ...data,
+    results: (data.results || []).map((show: any) => ({
+      id: show.id,
+      title: show.name,
+      poster_path: show.poster_path,
+      backdrop_path: show.backdrop_path,
+      release_date: show.first_air_date,
+      overview: show.overview,
+      vote_average: show.vote_average,
+    })),
+  };
+
+  return apiResponseSchema.parse(normalized) as APIResponse;
+}
+export async function getMoviesByCategory(
+  category: 'now_playing' | 'popular' | 'top_rated' | 'upcoming' | 'top_tv' | 'kdrama' | 'anime',
+  page = 1
+): Promise<APIResponse> {
+  if (category === 'top_tv') return getTopAiringTV(page);
+  if (category === 'kdrama') return getKDramas(page);
+  if (category === 'anime')  return getAnime(page);   // ← add
+  const data = await makeRequest<APIResponse>(`/movie/${category}?page=${page}`, {
+    next: { revalidate: 3600, tags: [`category-${category}`] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getKDramas(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<any>(
+    `/discover/tv?with_origin_country=KR&with_genres=18&sort_by=popularity.desc&page=${page}`,
+    { next: { revalidate: 3600, tags: ['kdramas'] } }
+  );
+
+  const normalized = {
+    ...data,
+    results: (data.results || []).map((show: any) => ({
+      id: show.id,
+      title: show.name,
+      poster_path: show.poster_path,
+      backdrop_path: show.backdrop_path,
+      release_date: show.first_air_date,
+      overview: show.overview,
+      vote_average: show.vote_average,
+    })),
+  };
+
+  return apiResponseSchema.parse(normalized) as APIResponse;
+}
+
+export async function getAnime(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<any>(
+    `/discover/tv?with_genres=16&with_origin_country=JP&sort_by=popularity.desc&page=${page}`,
+    { next: { revalidate: 3600, tags: ['anime'] } }
+  );
+
+  const normalized = {
+    ...data,
+    results: (data.results || []).map((show: any) => ({
+      id: show.id,
+      title: show.name,
+      poster_path: show.poster_path,
+      backdrop_path: show.backdrop_path,
+      release_date: show.first_air_date,
+      overview: show.overview,
+      vote_average: show.vote_average,
+    })),
+  };
+
+  return apiResponseSchema.parse(normalized) as APIResponse;
+}

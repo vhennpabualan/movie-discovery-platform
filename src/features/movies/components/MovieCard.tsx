@@ -10,6 +10,7 @@ interface MovieCardProps {
   onClick?: (movieId: number) => void;
   isInWatchlist?: boolean;
   priority?: boolean;
+  index?: number; 
 }
 
 export function MovieCard({
@@ -17,6 +18,7 @@ export function MovieCard({
   onClick,
   isInWatchlist = false,
   priority = false,
+  index,
 }: MovieCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -119,6 +121,7 @@ export function MovieCard({
           )}
         </div>
       )}
+      
 
       {/* Watchlist Badge */}
       {isInWatchlist && (
@@ -126,6 +129,25 @@ export function MovieCard({
           <span className="text-white text-xs font-bold">✓</span>
         </div>
       )}
+      {/* Number Badge - AniWatch style */}
+      {index !== undefined && (
+        <div className="absolute bottom-0 left-0 z-10">
+          <span
+            className="font-black leading-none select-none"
+            style={{
+              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+              color: 'transparent',
+              WebkitTextStroke: '2px rgba(255,255,255,0.25)',
+              lineHeight: 1,
+              display: 'block',
+              padding: '0 6px 2px',
+            }}
+          >
+            {String(index + 1).padStart(2, '0')}
+          </span>
+        </div>
+      )}
     </div>
+    
   );
 }

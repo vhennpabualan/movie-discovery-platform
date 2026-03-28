@@ -6,4 +6,6 @@ export interface Movie {
   title: string;
   poster_path?: string | null;
   release_date?: string | null;
+  backdrop_path?: string | null;
+  overview?: string;
 }

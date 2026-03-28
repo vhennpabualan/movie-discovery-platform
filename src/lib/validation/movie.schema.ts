@@ -10,6 +10,9 @@ export const movieSchema = z.object({
   title: z.string().min(1, 'Movie title is required'),
   poster_path: z.string().min(1, 'Poster path is required').nullable(),
   release_date: z.string().nullable().optional().default(null),
+  backdrop_path: z.string().nullable().optional().default(null),
+  overview: z.string().optional(),
+  vote_average: z.number().nonnegative().optional().default(0),
 });
 
 export type Movie = z.infer<typeof movieSchema>;

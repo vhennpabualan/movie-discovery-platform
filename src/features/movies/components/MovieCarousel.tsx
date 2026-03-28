@@ -9,12 +9,14 @@ interface MovieCarouselProps {
   movies: (Movie & { vote_average?: number })[];
   onMovieClick?: (movieId: number) => void;
   watchlistIds?: number[];
+  
 }
 
 export function MovieCarousel({
   movies,
   onMovieClick,
   watchlistIds = [],
+  
 }: MovieCarouselProps) {
   const scrollContainerRef = useRef<HTMLUListElement>(null);
   const { navigateWithTransition } = useViewTransition();
@@ -68,6 +70,7 @@ export function MovieCarousel({
               onClick={handleMovieClick}
               isInWatchlist={watchlistIds.includes(movie.id)}
               priority={index === 0}
+              index={index}
             />
           </li>
         ))}
