@@ -18,6 +18,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Movie Discovery Platform",
   description: "Discover, search, and manage your favorite movies",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+  },
+  themeColor: "#0f0f0f",
 };
 
 export default function RootLayout({

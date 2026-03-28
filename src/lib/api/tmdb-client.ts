@@ -666,3 +666,16 @@ export async function getAnime(page = 1): Promise<APIResponse> {
 
   return apiResponseSchema.parse(normalized) as APIResponse;
 }
+export async function findTMDBIdByTitle(title: string): Promise<number | null> {
+  try {
+    const encoded = encodeURIComponent(title);
+    const data = await makeRequest<any>(
+      `/search/tv?query=${encoded}&page=1`,
+      { next: { revalidate: 86400 } }
+    );
+    if (data.results?.length > 0) return data.results[0].id;
+    return null;
+  } catch {
+    return null;
+  }
+}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Movie } from '@/types/movie';
 import { MovieCard } from './MovieCard';
 import { getMoviesByCategory } from '@/lib/api/tmdb-client';
@@ -13,6 +14,7 @@ interface CategoryGridProps {
 }
 
 export function CategoryGrid({ initialMovies, category, isTv, totalPages }: CategoryGridProps) {
+  const router = useRouter();
   const [movies, setMovies] = useState<Movie[]>(initialMovies);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export function CategoryGrid({ initialMovies, category, isTv, totalPages }: Cate
             key={movie.id}
             movie={movie}
             onClick={(id) => {
-              window.location.href = isTv ? `/tv/${id}` : `/movies/${id}`;
+              router.push(isTv ? `/tv/${id}` : `/movies/${id}`);
             }}
           />
         ))}

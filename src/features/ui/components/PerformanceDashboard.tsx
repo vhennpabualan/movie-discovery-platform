@@ -100,7 +100,7 @@ export function PerformanceDashboard() {
                             : 'text-red-400'
                       }
                     >
-                      {webVitals.lcp.value.toFixed(0)}ms ({webVitals.lcp.rating})
+                      {webVitals.lcp.value != null ? webVitals.lcp.value.toFixed(0) : '—'}ms ({webVitals.lcp.rating})
                     </span>
                   </div>
                 )}
@@ -116,7 +116,7 @@ export function PerformanceDashboard() {
                             : 'text-red-400'
                       }
                     >
-                      {webVitals.fid.value.toFixed(0)}ms ({webVitals.fid.rating})
+                      {webVitals.fid.value != null ? webVitals.fid.value.toFixed(0) : '—'}ms ({webVitals.fid.rating})
                     </span>
                   </div>
                 )}
@@ -132,7 +132,7 @@ export function PerformanceDashboard() {
                             : 'text-red-400'
                       }
                     >
-                      {webVitals.cls.value.toFixed(4)} ({webVitals.cls.rating})
+                      {webVitals.cls.value != null ? webVitals.cls.value.toFixed(4) : '—'} ({webVitals.cls.rating})
                     </span>
                   </div>
                 )}

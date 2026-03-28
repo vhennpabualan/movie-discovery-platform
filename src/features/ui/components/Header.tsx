@@ -70,6 +70,9 @@ export function Header() {
             >
               Browse
             </Link>
+            <Link href="/anime" className="text-sm md:text-base text-white hover:text-netflix-red transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark rounded px-3 py-2">
+              Anime
+            </Link>
             <Link
               href="/watchlist"
               className="text-sm md:text-base text-white hover:text-netflix-red transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark rounded px-3 py-2"
