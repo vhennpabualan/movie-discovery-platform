@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { getAnimeDetails, getAnimeEpisodes } from '@/lib/api/jikan-client';
+import { getAnimeDetails, getAnimeEpisodes, getAnimeRelations } from '@/lib/api/jikan-client';
 import { getAniListIdFromMAL } from '@/lib/api/anilist-client';
 import { AnimeStreamingPlayer } from '@/features/anime-streaming/components';
 
@@ -19,7 +19,6 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
   if (isNaN(malId)) notFound();
 
   try {
-    // Fetch anime details and episodes (required)
     const [detailRes, episodesRes] = await Promise.all([
       getAnimeDetails(malId),
       getAnimeEpisodes(malId),
@@ -30,21 +29,38 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
     const title = anime.title_english || anime.title;
     const year = anime.aired.from ? new Date(anime.aired.from).getFullYear() : null;
 
-    // Fetch AniList ID separately (optional, don't fail page if this fails)
+    // Fetch related anime (sequels/prequels) for season detection
+    let relatedSeasons: Array<{ mal_id: number; name: string; relation: string; type: 'Sequel' | 'Prequel' | 'Other' }> = [];
+    try {
+      const relationsRes = await getAnimeRelations(malId);
+      
+      // Get sequels and prequels
+      const sequels = relationsRes.data
+        .filter(rel => rel.relation === 'Sequel')
+        .flatMap(rel => rel.entry.filter(e => e.type === 'anime'))
+        .map(e => ({ mal_id: e.mal_id, name: e.name, relation: 'Sequel', type: 'Sequel' as const }));
+      
+      const prequels = relationsRes.data
+        .filter(rel => rel.relation === 'Prequel')
+        .flatMap(rel => rel.entry.filter(e => e.type === 'anime'))
+        .map(e => ({ mal_id: e.mal_id, name: e.name, relation: 'Prequel', type: 'Prequel' as const }));
+      
+      relatedSeasons = [...prequels, ...sequels];
+    } catch (error) {
+      console.error('[Anime Detail] Failed to fetch relations:', error);
+    }
+
     let anilistId: number | null = null;
     try {
       anilistId = await getAniListIdFromMAL(malId);
-      console.log(`[Anime Detail] MAL ID: ${malId}, AniList ID: ${anilistId || 'NOT FOUND'}`);
     } catch (error) {
       console.error('[Anime Detail] Failed to fetch AniList ID:', error);
-      // Continue rendering page even if AniList lookup fails
     }
 
     return (
-      <main className="min-h-screen bg-gradient-to-b from-netflix-dark-secondary to-netflix-dark">
+      <main className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
         <article className="max-w-6xl mx-auto px-4 py-6 md:py-8">
-
-          <Link href="/anime" className="inline-flex items-center gap-1 text-white/50 hover:text-netflix-red transition-colors text-sm mb-6">
+          <Link href="/anime" className="inline-flex items-center gap-1 text-white/50 hover:text-red-500 transition-colors text-sm mb-6">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -65,12 +81,12 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
               </div>
             </aside>
 
-            <section className="md:col-span-2 flex flex-col justify-start">
-              <h1 className="text-3xl md:text-5xl font-bold text-white mb-2">{title}</h1>
+            <section className="md:col-span-2">
+              <h1 className="text-3xl md:text-5xl font-bold mb-2">{title}</h1>
               {anime.title !== title && (
                 <p className="text-white/50 text-sm mb-3">{anime.title}</p>
               )}
-              <p className="text-netflix-gray text-base mb-4">
+              <p className="text-gray-400 text-base mb-4">
                 {year}
                 {anime.airing && ' - Present'}
                 {!anime.airing && anime.aired.to && ` - ${new Date(anime.aired.to).getFullYear()}`}
@@ -90,23 +106,23 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
                 </div>
               )}
 
-              <div className="space-y-4 mb-6 pb-6 border-b border-netflix-gray/20">
+              <div className="space-y-4 mb-6 pb-6 border-b border-gray-700">
                 <div>
-                  <h3 className="text-netflix-gray text-xs font-semibold mb-1">Episodes</h3>
+                  <h3 className="text-gray-400 text-xs font-semibold mb-1">Episodes</h3>
                   <p className="text-white text-base">
                     {anime.episodes ? `${anime.episodes} Episodes` : 'Ongoing'}
                     {anime.airing && (
-                      <span className="ml-2 text-xs bg-netflix-red text-white px-2 py-0.5 rounded">AIRING</span>
+                      <span className="ml-2 text-xs bg-red-600 text-white px-2 py-0.5 rounded">AIRING</span>
                     )}
                   </p>
                 </div>
 
                 {anime.genres.length > 0 && (
                   <div>
-                    <h3 className="text-netflix-gray text-xs font-semibold mb-2">Genres</h3>
+                    <h3 className="text-gray-400 text-xs font-semibold mb-2">Genres</h3>
                     <div className="flex flex-wrap gap-2">
                       {anime.genres.map((g) => (
-                        <span key={g.mal_id} className="px-3 py-1 bg-netflix-red/20 text-netflix-red rounded-full text-xs border border-netflix-red/50">
+                        <span key={g.mal_id} className="px-3 py-1 bg-red-600/20 text-red-400 rounded-full text-xs border border-red-600/50">
                           {g.name}
                         </span>
                       ))}
@@ -116,29 +132,35 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
 
                 {anime.studios.length > 0 && (
                   <div>
-                    <h3 className="text-netflix-gray text-xs font-semibold mb-1">Studios</h3>
+                    <h3 className="text-gray-400 text-xs font-semibold mb-1">Studios</h3>
                     <p className="text-white text-sm">{anime.studios.map((s) => s.name).join(', ')}</p>
                   </div>
                 )}
 
                 <div>
-                  <h3 className="text-netflix-gray text-xs font-semibold mb-1">Status</h3>
+                  <h3 className="text-gray-400 text-xs font-semibold mb-1">Status</h3>
                   <p className="text-white text-base">{anime.status}</p>
                 </div>
               </div>
 
               {anime.synopsis && (
-                <section>
-                  <h2 className="text-lg font-semibold text-white mb-3">Synopsis</h2>
+                <div>
+                  <h2 className="text-lg font-semibold mb-3">Synopsis</h2>
                   <p className="text-gray-300 leading-relaxed text-sm md:text-base">{anime.synopsis}</p>
-                </section>
+                </div>
               )}
             </section>
           </div>
 
-          {/* Anime Streaming Player */}
-          <section className="mt-12 pt-6 border-t border-netflix-gray/20">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Watch Now</h2>
+          <section className="mt-12 pt-6 border-t border-gray-700">
+            <h2 className="text-2xl md:text-3xl font-bold mb-6">Watch Now</h2>
+            {relatedSeasons.length > 0 && (
+              <div className="mb-4 p-3 bg-blue-900/20 border border-blue-500/50 rounded-lg">
+                <p className="text-sm text-blue-300">
+                  📺 This anime has multiple seasons. Check "Related Seasons" below to watch other seasons.
+                </p>
+              </div>
+            )}
             {anilistId ? (
               <div>
                 <div className="mb-3 text-sm text-gray-400">
@@ -150,39 +172,76 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
                   anilistId={anilistId}
                   episode={initialEpisode}
                   totalEpisodes={anime.episodes || 99}
+                  season={1}
+                  totalSeasons={1}
                   preferredLanguage="sub"
-                  onEpisodeChange={(ep) => {
-                    // Episode change is handled by the player component
-                    console.log(`Episode changed to ${ep}`);
-                  }}
                 />
               </div>
             ) : (
-              <div className="bg-netflix-dark-secondary rounded-lg p-8 text-center border border-netflix-gray/20">
+              <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
                 <p className="text-white/50 text-sm mb-2">
                   Stream not available for this anime.
                 </p>
-                <p className="text-white/30 text-xs mb-4">
+                <p className="text-white/30 text-xs">
                   MAL ID: {malId} • Unable to find AniList mapping
                 </p>
-                <details className="text-left mt-4">
-                  <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-400">
-                    Why is this happening?
-                  </summary>
-                  <div className="mt-2 text-xs text-gray-500 space-y-2">
-                    <p>This anime might not be available in the AniList database, or the MAL ID mapping is missing.</p>
-                    <p>Try searching for this anime on <a href={`https://anilist.co/search/anime?search=${encodeURIComponent(title)}`} target="_blank" rel="noopener noreferrer" className="text-netflix-red hover:underline">AniList</a> to verify.</p>
-                  </div>
-                </details>
               </div>
             )}
           </section>
 
-          {/* Episodes list */}
+          {relatedSeasons.length > 0 && (
+            <section className="mt-12 pt-6 border-t border-gray-700">
+              <h2 className="text-2xl font-bold mb-6">Related Seasons</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {/* Show prequels first */}
+                {relatedSeasons.filter(s => s.type === 'Prequel').map((season) => (
+                  <Link
+                    key={season.mal_id}
+                    href={`/anime/${season.mal_id}`}
+                    className="p-4 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 hover:border-red-600 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs font-semibold px-2 py-1 bg-blue-600/20 text-blue-400 rounded border border-blue-600/50">
+                        ← Previous Season
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-white mb-1 line-clamp-2">{season.name}</h3>
+                  </Link>
+                ))}
+                
+                {/* Current season indicator */}
+                <div className="p-4 bg-red-900/20 rounded-lg border-2 border-red-600">
+                  <div className="flex items-start justify-between mb-2">
+                    <span className="text-xs font-semibold px-2 py-1 bg-red-600 text-white rounded">
+                      ● Current Season
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-white mb-1 line-clamp-2">{title}</h3>
+                </div>
+                
+                {/* Show sequels after */}
+                {relatedSeasons.filter(s => s.type === 'Sequel').map((season) => (
+                  <Link
+                    key={season.mal_id}
+                    href={`/anime/${season.mal_id}`}
+                    className="p-4 bg-gray-800 hover:bg-gray-700 rounded-lg border border-gray-700 hover:border-red-600 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <span className="text-xs font-semibold px-2 py-1 bg-green-600/20 text-green-400 rounded border border-green-600/50">
+                        Next Season →
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-white mb-1 line-clamp-2">{season.name}</h3>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           {episodes.length > 0 && (
-            <section className="mt-12 pt-6 border-t border-netflix-gray/20">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                Episodes ({episodesRes.pagination.items.total})
+            <section className="mt-12 pt-6 border-t border-gray-700">
+              <h2 className="text-2xl font-bold mb-6">
+                Episodes ({episodes.length})
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {episodes.map((ep) => (
@@ -191,8 +250,8 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
                     href={`/anime/${malId}?episode=${ep.mal_id}`}
                     className={`p-3 rounded-lg border transition-colors ${
                       ep.mal_id === initialEpisode
-                        ? 'bg-netflix-red/20 border-netflix-red text-netflix-red'
-                        : 'bg-gray-900/50 border-gray-800 hover:border-netflix-red text-white'
+                        ? 'bg-red-600/20 border-red-600 text-red-400'
+                        : 'bg-gray-800 border-gray-700 hover:border-red-600 text-white'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -210,11 +269,11 @@ export default async function AnimeDetailPage({ params, searchParams }: PageProp
               </div>
             </section>
           )}
-
         </article>
       </main>
     );
-  } catch {
+  } catch (error) {
+    console.error('[Anime Detail] Error:', error);
     notFound();
   }
 }

@@ -61,11 +61,20 @@ export interface JikanPaginatedResponse<T> {
 
 async function jikanRequest<T>(endpoint: string): Promise<T> {
   const url = `${JIKAN_BASE_URL}${endpoint}`;
+  console.log(`[Jikan] Requesting: ${url}`);
+  
+  // Shorter cache for anime details and episodes (15 minutes for airing shows)
+  const cacheTime = endpoint.includes('/episodes') || endpoint.includes('/full') ? 900 : 3600;
+  
   const res = await fetch(url, {
-    next: { revalidate: 3600 },
+    next: { revalidate: cacheTime },
   });
 
+  console.log(`[Jikan] Response status: ${res.status} for ${endpoint}`);
+
   if (!res.ok) {
+    const errorText = await res.text();
+    console.error(`[Jikan] Error response:`, errorText);
     throw new Error(`Jikan API error: ${res.status} ${res.statusText}`);
   }
 
@@ -105,4 +114,9 @@ export async function searchAnime(query: string, page = 1): Promise<JikanPaginat
 /** Get anime by season e.g. winter 2025 */
 export async function getSeasonalAnime(year: number, season: string, page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/seasons/${year}/${season}?page=${page}`);
+}
+
+/** Get related anime (sequels, prequels, etc.) */
+export async function getAnimeRelations(malId: number): Promise<{ data: Array<{ relation: string; entry: Array<{ mal_id: number; type: string; name: string; url: string }> }> }> {
+  return jikanRequest(`/anime/${malId}/relations`);
 }

@@ -53,8 +53,8 @@ export function HeroSection({ movies }: HeroSectionProps) {
       )}
 
       {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/10" />
-      <div className="absolute inset-0 bg-gradient-to-t from-netflix-dark via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/60 to-black/10" />
+      <div className="absolute inset-0 bg-linear-to-t from-netflix-dark via-transparent to-transparent" />
 
       {/* Content — centered vertically */}
       <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-16 max-w-3xl">

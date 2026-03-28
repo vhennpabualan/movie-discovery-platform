@@ -3,12 +3,18 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { usePathname } from 'next/navigation';
 import { SearchBar } from '@/features/search/components/SearchBar';
+import { AnimeSearchBar } from '@/features/anime/components/AnimeSearchBar';
 import { MobileNav } from './MobileNav';
 
 export function Header() {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const pathname = usePathname();
+  
+  // Check if we're on an anime page
+  const isAnimePage = pathname?.startsWith('/anime');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -51,14 +57,14 @@ export function Header() {
             MovieFlix
           </Link>
 
-          {/* Search Bar - Full width on mobile, constrained on desktop */}
+          {/* Search Bar - Desktop only, switches between movie/anime search */}
           <div className="hidden md:flex flex-1 max-w-md">
             <Suspense
               fallback={
-                <div className="h-10 bg-netflix-dark-secondary rounded-lg animate-pulse" />
+                <div className="h-10 bg-netflix-dark-secondary rounded-lg animate-pulse w-full" />
               }
             >
-              <SearchBar />
+              {isAnimePage ? <AnimeSearchBar /> : <SearchBar />}
             </Suspense>
           </div>
 
@@ -83,17 +89,6 @@ export function Header() {
 
           {/* Mobile Navigation */}
           <MobileNav />
-        </div>
-
-        {/* Mobile Search Bar */}
-        <div className="md:hidden mt-4">
-          <Suspense
-            fallback={
-              <div className="h-10 bg-netflix-dark-secondary rounded-lg animate-pulse" />
-            }
-          >
-            <SearchBar />
-          </Suspense>
         </div>
       </div>
     </header>

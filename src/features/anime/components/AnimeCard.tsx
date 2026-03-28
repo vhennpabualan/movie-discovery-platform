@@ -81,7 +81,7 @@ export function AnimeCard({ anime, index, priority = false }: AnimeCardProps) {
 
         {/* Hover info */}
         {isHovered && (
-          <div className="absolute inset-0 flex flex-col justify-end p-3 bg-gradient-to-t from-black via-black/50 to-transparent">
+          <div className="absolute inset-0 flex flex-col justify-end p-3 bg-linear-to-t from-black via-black/50 to-transparent">
             <p className="text-white font-bold text-xs line-clamp-2 mb-1">{title}</p>
             <div className="flex items-center gap-2 flex-wrap">
               {anime.episodes && (

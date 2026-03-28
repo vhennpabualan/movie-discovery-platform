@@ -6,8 +6,11 @@ interface AnimeStreamingPlayerProps {
   anilistId: number;
   episode?: number;
   totalEpisodes?: number;
+  season?: number;
+  totalSeasons?: number;
   preferredLanguage?: 'sub' | 'dub';
   onEpisodeChange?: (episode: number) => void;
+  onSeasonChange?: (season: number) => void;
 }
 
 /**
@@ -20,10 +23,14 @@ export function AnimeStreamingPlayer({
   anilistId,
   episode = 1,
   totalEpisodes = 1,
+  season = 1,
+  totalSeasons = 3,
   preferredLanguage = 'sub',
   onEpisodeChange,
+  onSeasonChange,
 }: AnimeStreamingPlayerProps) {
   const [currentEpisode, setCurrentEpisode] = useState(episode);
+  const [currentSeason, setCurrentSeason] = useState(season);
   const [language, setLanguage] = useState<'sub' | 'dub'>(preferredLanguage);
   const [provider, setProvider] = useState<'vidnest' | 'animepahe'>('vidnest');
   const [iframeError, setIframeError] = useState(false);
@@ -33,6 +40,16 @@ export function AnimeStreamingPlayer({
   const embedURL = provider === 'vidnest'
     ? `https://vidnest.fun/anime/${anilistId}/${currentEpisode}/${language}`
     : `https://vidnest.fun/animepahe/${anilistId}/${currentEpisode}/${language}`;
+
+  const handleSeasonChange = (newSeason: number) => {
+    setCurrentSeason(newSeason);
+    setCurrentEpisode(1); // Reset to episode 1 when changing seasons
+    setIframeError(false);
+    setIsLoading(true);
+    if (onSeasonChange) {
+      onSeasonChange(newSeason);
+    }
+  };
 
   const handleEpisodeChange = (newEpisode: number) => {
     setCurrentEpisode(newEpisode);
@@ -70,9 +87,31 @@ export function AnimeStreamingPlayer({
   return (
     <div className="w-full">
       {/* Controls */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-4 flex flex-col gap-3">
+        {/* Season Selector (if multiple seasons) */}
+        {totalSeasons > 1 && (
+          <div className="flex items-center gap-3 p-3 bg-gray-800 rounded-lg border border-gray-700">
+            <label htmlFor="season-selector" className="text-sm font-medium text-gray-300">
+              Season:
+            </label>
+            <select
+              id="season-selector"
+              value={currentSeason}
+              onChange={(e) => handleSeasonChange(parseInt(e.target.value, 10))}
+              className="px-3 py-1 bg-gray-900 text-gray-100 text-sm rounded border border-gray-600 hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+              aria-label="Select season"
+            >
+              {Array.from({ length: totalSeasons }, (_, i) => i + 1).map((s) => (
+                <option key={s} value={s}>
+                  Season {s}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {/* Episode Navigation */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handlePrevEpisode}
             disabled={currentEpisode <= 1}
@@ -112,7 +151,7 @@ export function AnimeStreamingPlayer({
         </div>
 
         {/* Language & Provider Selection */}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label htmlFor="language-selector" className="text-sm font-medium text-gray-300">
               Audio:
@@ -208,6 +247,7 @@ export function AnimeStreamingPlayer({
           <summary className="cursor-pointer hover:text-gray-400">Debug Info</summary>
           <div className="mt-2 text-left bg-gray-900 p-3 rounded">
             <p>AniList ID: {anilistId}</p>
+            {totalSeasons > 1 && <p>Season: {currentSeason}</p>}
             <p>Episode: {currentEpisode}</p>
             <p>Language: {language}</p>
             <p>Provider: {provider}</p>
@@ -218,6 +258,7 @@ export function AnimeStreamingPlayer({
 
       {/* Episode Info */}
       <div className="mt-3 text-center text-sm text-gray-400">
+        {totalSeasons > 1 && <span>Season {currentSeason} • </span>}
         Episode {currentEpisode} of {totalEpisodes} • {language === 'sub' ? 'Subbed' : 'Dubbed'}
       </div>
     </div>

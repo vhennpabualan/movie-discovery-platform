@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { getAiringAnime, getTopAnime, getPopularAnime } from '@/lib/api/jikan-client';
 import { AnimeCard } from '@/features/anime/components/AnimeCard';
-import { AnimeGrid } from '@/features/anime/components/AnimeGrid';
 
 export const revalidate = 3600;
 
@@ -27,8 +26,8 @@ export default async function AnimePage() {
             backgroundPosition: 'center top',
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-netflix-dark via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/60 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-netflix-dark via-transparent to-transparent" />
           <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-16 max-w-2xl">
             <span className="text-netflix-red font-semibold text-sm mb-2">Now Airing</span>
             <h1 className="text-3xl md:text-5xl font-black text-white mb-3 leading-tight">

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { AnimeSearchBar } from '@/features/anime/components/AnimeSearchBar';
 
 /**
  * MobileNav Component
@@ -15,6 +17,7 @@ import Link from 'next/link';
  * - Keyboard accessible (Escape to close)
  * - Click outside to close
  * - Responsive design (hidden on desktop)
+ * - Shows anime search bar when on anime pages
  *
  * @example
  * // Usage in layout
@@ -22,6 +25,8 @@ import Link from 'next/link';
  */
 export function MobileNav() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
+  const isAnimePage = pathname?.startsWith('/anime');
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -94,14 +99,24 @@ export function MobileNav() {
           />
           
           {/* Menu Panel */}
-            <div className="fixed top-[73px] left-0 right-0 bg-[#0f0f0f] border-b border-netflix-gray/20 shadow-2xl z-56 animate-slideDown">            <nav className="flex flex-col p-6 gap-1">
-              <Link
-                href="/search"
-                onClick={closeMenu}
-                className="text-white hover:bg-netflix-red/10 hover:text-netflix-red transition-all px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red text-lg"
-              >
-                Search
-              </Link>
+          <div className="fixed top-[73px] left-0 right-0 bg-[#0f0f0f] border-b border-netflix-gray/20 shadow-2xl z-56 animate-slideDown">
+            {/* Anime Search Bar - Only show on anime pages */}
+            {isAnimePage && (
+              <div className="px-6 pt-6 pb-4 border-b border-netflix-gray/20">
+                <AnimeSearchBar />
+              </div>
+            )}
+            
+            <nav className="flex flex-col p-6 gap-1">
+              {!isAnimePage && (
+                <Link
+                  href="/search"
+                  onClick={closeMenu}
+                  className="text-white hover:bg-netflix-red/10 hover:text-netflix-red transition-all px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red text-lg"
+                >
+                  Search Movies/TV
+                </Link>
+              )}
               <Link
                 href="/browse"
                 onClick={closeMenu}
@@ -109,7 +124,11 @@ export function MobileNav() {
               >
                 Browse
               </Link>
-              <Link href="/anime" className="text-sm md:text-base text-white hover:text-netflix-red transition-colors focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark rounded px-3 py-2">
+              <Link
+                href="/anime"
+                onClick={closeMenu}
+                className="text-white hover:bg-netflix-red/10 hover:text-netflix-red transition-all px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-netflix-red text-lg"
+              >
                 Anime
               </Link>
               <Link
