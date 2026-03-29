@@ -1,15 +1,17 @@
 import Link from 'next/link';
-import { getAiringAnime, getTopAnime, getPopularAnime } from '@/lib/api/jikan-client';
+import { getAiringAnime, getTopAnime, getPopularAnime, getAnimeGenres } from '@/lib/api/jikan-client';
 import { AnimeCard } from '@/features/anime/components/AnimeCard';
 import { AnimeHero } from '@/features/anime/components/AnimeHero';
+import { GenreBrowseSection } from '@/features/anime/components/GenreBrowseSection';
 
 export const revalidate = 3600;
 
 export default async function AnimePage() {
-  const [airing, top, popular] = await Promise.all([
+  const [airing, top, popular, genresRes] = await Promise.all([
     getAiringAnime(),
     getTopAnime(),
     getPopularAnime(),
+    getAnimeGenres(),
   ]);
 
   return (
@@ -33,6 +35,9 @@ export default async function AnimePage() {
             ))}
           </div>
         </section>
+
+        {/* Genre Browse */}
+        <GenreBrowseSection genres={genresRes.data} />
 
         {/* Top Rated */}
         <section>

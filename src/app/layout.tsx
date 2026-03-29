@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/features/ui/components/Header";
 import { PerformanceDashboard } from "@/features/ui/components/PerformanceDashboard";
 import { WebVitalsInitializer } from "@/features/ui/components/WebVitalsInitializer";
+import { NavigationProgress } from '@/features/ui/components/NavigationProgress';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,6 +41,7 @@ export default function RootLayout({
       style={{ viewTransitionName: 'root' } as any}
     >
       <body className="min-h-full flex flex-col bg-netflix-dark">
+        <NavigationProgress />
         <WebVitalsInitializer />
         <PerformanceDashboard />
         

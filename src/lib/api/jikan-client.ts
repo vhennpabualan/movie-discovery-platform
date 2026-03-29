@@ -49,6 +49,13 @@ export interface JikanSeason {
   anime: JikanAnime[];
 }
 
+export interface JikanGenre {
+  mal_id: number;
+  name: string;
+  count: number;
+  url: string;
+}
+
 export interface JikanPaginatedResponse<T> {
   data: T[];
   pagination: {
@@ -119,4 +126,14 @@ export async function getSeasonalAnime(year: number, season: string, page = 1): 
 /** Get related anime (sequels, prequels, etc.) */
 export async function getAnimeRelations(malId: number): Promise<{ data: Array<{ relation: string; entry: Array<{ mal_id: number; type: string; name: string; url: string }> }> }> {
   return jikanRequest(`/anime/${malId}/relations`);
+}
+
+/** Get all anime genres */
+export async function getAnimeGenres(): Promise<{ data: JikanGenre[] }> {
+  return jikanRequest(`/genres/anime`);
+}
+
+/** Get anime by genre ID */
+export async function getAnimeByGenre(genreId: number, page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
+  return jikanRequest(`/anime?genres=${genreId}&order_by=score&sort=desc&page=${page}&sfw=true`);
 }
