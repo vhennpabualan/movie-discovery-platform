@@ -358,7 +358,7 @@ export async function getGenres(): Promise<Array<{ id: number; name: string }>> 
   const endpoint = '/genre/movie/list';
   try {
     const data = await makeRequest<{ genres: Array<{ id: number; name: string }> }>(endpoint, {
-      next: { revalidate: 86400, tags: ['genres'] },
+      next: { revalidate: 604800, tags: ['genres'] },
     });
     return data.genres || [];
   } catch (error) {

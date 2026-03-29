@@ -12,19 +12,17 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "myanimelist.net",  // ← add this
+        hostname: "myanimelist.net",
       },
       {
         protocol: "https",
-        hostname: "cdn.myanimelist.net",  // ← add this too (Jikan uses both)
+        hostname: "cdn.myanimelist.net",
       },
     ],
   },
-  // Enable experimental optimizations
   experimental: {
     optimizePackageImports: ["react", "react-dom"],
   },
-  // Add headers for streaming iframe support
   async headers() {
     return [
       {
@@ -34,10 +32,7 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: "frame-src 'self' https://vidsrc.net https://www.2embed.cc https://multiembed.mov https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com https://theajack.github.io;",
           },
-          {
-            key: "Referrer-Policy",
-            value: "origin",
-          },
+          { key: "Referrer-Policy", value: "origin" },
         ],
       },
       {
@@ -47,12 +42,10 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: "frame-src 'self' https://vidsrc.net https://www.2embed.cc https://multiembed.mov https://vidsrc-embed.ru https://vidsrc-embed.su https://vidsrcme.su https://vsrc.su https://vsembed.ru https://cloudnestra.com https://theajack.github.io;",
           },
-          {
-            key: "Referrer-Policy",
-            value: "origin",
-          },
+          { key: "Referrer-Policy", value: "origin" },
         ],
       },
+      // Covers /anime/123 (top level)
       {
         source: "/anime/:id",
         headers: [
@@ -60,10 +53,18 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: "frame-src 'self' https://vidnest.fun https://vidsrc.cc https://vidsrc.icu;",
           },
+          { key: "Referrer-Policy", value: "origin" },
+        ],
+      },
+      // Covers /anime/123/anything (nested routes)
+      {
+        source: "/anime/:id/:path*",
+        headers: [
           {
-            key: "Referrer-Policy",
-            value: "origin",
+            key: "Content-Security-Policy",
+            value: "frame-src 'self' https://vidnest.fun https://vidsrc.cc https://vidsrc.icu;",
           },
+          { key: "Referrer-Policy", value: "origin" },
         ],
       },
     ];

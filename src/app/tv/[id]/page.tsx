@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getTVShowDetails } from '@/lib/api/tmdb-client';
 import { MoviePoster } from '@/features/movies/components/MoviePoster';
@@ -12,6 +13,32 @@ interface TVShowDetailsPageProps {
     season?: string;
     episode?: string;
   }>;
+}
+
+export async function generateMetadata(
+  { params }: TVShowDetailsPageProps
+): Promise<Metadata> {
+  const { id } = await params;
+  const tvId = parseInt(id, 10);
+
+  if (isNaN(tvId)) return { title: 'TV Show Not Found' };
+
+  try {
+    const tvShow = await getTVShowDetails(tvId);
+    return {
+      title: `${tvShow.name} (${new Date(tvShow.first_air_date).getFullYear()}) — MovieFlix`,
+      description: tvShow.overview?.slice(0, 160) || 'Watch this show on MovieFlix.',
+      openGraph: {
+        title: tvShow.name,
+        description: tvShow.overview?.slice(0, 160) || '',
+        images: tvShow.poster_path
+          ? [`https://image.tmdb.org/t/p/w500${tvShow.poster_path}`]
+          : [],
+      },
+    };
+  } catch {
+    return { title: 'TV Show Not Found — MovieFlix' };
+  }
 }
 
 /**

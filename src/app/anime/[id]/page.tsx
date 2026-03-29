@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getAnimeDetails, getAnimeEpisodes, getAnimeRelations } from '@/lib/api/jikan-client';
 import { getAniListIdFromMAL } from '@/lib/api/anilist-client';
@@ -8,6 +9,33 @@ import { AnimeStreamingPlayer } from '@/features/anime-streaming/components';
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ episode?: string }>;
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params;
+  const malId = parseInt(id, 10);
+
+  if (isNaN(malId)) return { title: 'Anime Not Found' };
+
+  try {
+    const { data: anime } = await getAnimeDetails(malId);
+    const title = anime.title_english || anime.title;
+    return {
+      title: `${title} — MovieFlix`,
+      description: anime.synopsis?.slice(0, 160) || 'Watch this anime on MovieFlix.',
+      openGraph: {
+        title,
+        description: anime.synopsis?.slice(0, 160) || '',
+        images: anime.images?.jpg?.large_image_url
+          ? [anime.images.jpg.large_image_url]
+          : [],
+      },
+    };
+  } catch {
+    return { title: 'Anime Not Found — MovieFlix' };
+  }
 }
 
 export default async function AnimeDetailPage({ params, searchParams }: PageProps) {

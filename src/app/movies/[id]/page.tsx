@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getMovieDetails } from '@/lib/api/tmdb-client';
 import { MoviePoster } from '@/features/movies/components/MoviePoster';
@@ -10,6 +11,39 @@ interface MovieDetailsPageProps {
   params: Promise<{
     id: string;
   }>;
+}
+export async function generateMetadata(
+  { params }: MovieDetailsPageProps
+): Promise<Metadata> {
+  const { id } = await params;
+  const movieId = parseInt(id, 10);
+
+  if (isNaN(movieId)) return { title: 'Movie Not Found' };
+
+  try {
+    const movie = await getMovieDetails(movieId);
+
+    // ✅ Guard against empty or invalid release_date
+    const year = movie.release_date
+      ? new Date(movie.release_date).getFullYear()
+      : null;
+
+    return {
+      title: year
+        ? `${movie.title} (${year}) — MovieFlix`
+        : `${movie.title} — MovieFlix`,
+      description: movie.overview?.slice(0, 160) || 'Watch this movie on MovieFlix.',
+      openGraph: {
+        title: movie.title,
+        description: movie.overview?.slice(0, 160) || '',
+        images: movie.poster_path
+          ? [`https://image.tmdb.org/t/p/w500${movie.poster_path}`]
+          : [],
+      },
+    };
+  } catch {
+    return { title: 'Movie Not Found — MovieFlix' };
+  }
 }
 
 /**

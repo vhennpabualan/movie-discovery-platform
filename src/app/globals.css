@@ -73,12 +73,12 @@ body {
 }
 
 /* Smooth transitions for interactive elements */
-button,
-a,
-input,
-select,
-textarea {
-  transition: all 200ms ease-in-out;
+button, a {
+  transition: color 200ms ease-in-out, background-color 200ms ease-in-out, opacity 200ms ease-in-out;
+}
+
+input, select, textarea {
+  transition: border-color 200ms ease-in-out, box-shadow 200ms ease-in-out;
 }
 
 /* Focus styles for accessibility */

@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
+const CURRENT_YEAR = new Date().getFullYear();
 import { Geist, Geist_Mono } from "next/font/google";
 import { Header } from "@/features/ui/components/Header";
 import { PerformanceDashboard } from "@/features/ui/components/PerformanceDashboard";
 import { WebVitalsInitializer } from "@/features/ui/components/WebVitalsInitializer";
 import { NavigationProgress } from '@/features/ui/components/NavigationProgress';
+import { SectionTransitionWrapper } from '@/features/ui/components/SectionTransitionWrapper';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +17,6 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
-
 
 export const metadata: Metadata = {
   title: "Movie Discovery Platform",
@@ -47,11 +48,11 @@ export default function RootLayout({
         
         {/* Header with Navigation */}
         <Header />
-
-        {/* Main Content - Add padding to account for fixed header */}
-        <main className="flex-1 bg-netflix-dark pt-[73px] md:pt-[97px]">
-          {children}
-        </main>
+        <SectionTransitionWrapper>
+          <main className="flex-1 bg-netflix-dark pt-[73px] md:pt-[97px]">
+            {children}
+          </main>
+        </SectionTransitionWrapper>
         {/* footer */}
         <footer className="bg-netflix-dark-secondary border-t border-netflix-gray/20 py-8 px-4">
           <div className="max-w-7xl mx-auto text-center text-netflix-gray text-sm">
@@ -59,7 +60,7 @@ export default function RootLayout({
               <a href="/dmca" className="hover:text-white transition-colors">DMCA</a>
               <a href="mailto:pabsvt2015@gmail.com" className="hover:text-white transition-colors">Contact</a>
             </div>
-            <p>&copy; {new Date().getFullYear()} Movie Discovery Platform. Personal use only.</p>
+            <p>&copy; {CURRENT_YEAR} Movie Discovery Platform. Personal use only.</p>
           </div>
         </footer>
       </body>
