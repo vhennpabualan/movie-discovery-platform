@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 const CURRENT_YEAR = new Date().getFullYear();
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
+import { SearchBar } from "@/features/search/components/SearchBar";
+import { MobileNav } from "@/features/ui/components/MobileNav";
 import { Header } from "@/features/ui/components/Header";
 import { PerformanceDashboard } from "@/features/ui/components/PerformanceDashboard";
 import { WebVitalsInitializer } from "@/features/ui/components/WebVitalsInitializer";
@@ -63,6 +67,7 @@ export default function RootLayout({
             <p>&copy; {CURRENT_YEAR} Movie Discovery Platform. Personal use only.</p>
           </div>
         </footer>
+        <Analytics />
       </body>
     </html>
   );
