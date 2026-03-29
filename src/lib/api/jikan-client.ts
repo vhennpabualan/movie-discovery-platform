@@ -6,7 +6,8 @@
 
 const JIKAN_BASE_URL = 'https://api.jikan.moe/v4';
 
-// Jikan anime types
+export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export interface JikanAnime {
   mal_id: number;
   title: string;
@@ -68,16 +69,24 @@ export interface JikanPaginatedResponse<T> {
 
 async function jikanRequest<T>(endpoint: string): Promise<T> {
   const url = `${JIKAN_BASE_URL}${endpoint}`;
-  // console.log(`[Jikan] Requesting: ${url}`);
-  
-  // Shorter cache for anime details and episodes (15 minutes for airing shows)
-  const cacheTime = endpoint.includes('/episodes') || endpoint.includes('/full') ? 900 : 3600;
-  
+
+  let cacheTime = 86400;
+
+  if (endpoint.includes('filter=airing')) {
+    cacheTime = 259200;
+  } else if (endpoint.includes('filter=bypopularity')) {
+    cacheTime = 86400;
+  } else if (endpoint.includes('/top/anime') && !endpoint.includes('filter=')) {
+    cacheTime = 86400;
+  } else if (endpoint.includes('/genres')) {
+    cacheTime = 604800;
+  } else if (endpoint.includes('/episodes') || endpoint.includes('/full')) {
+    cacheTime = 900;
+  }
+
   const res = await fetch(url, {
     next: { revalidate: cacheTime },
   });
-
-  // console.log(`[Jikan] Response status: ${res.status} for ${endpoint}`);
 
   if (!res.ok) {
     const errorText = await res.text();
@@ -88,52 +97,42 @@ async function jikanRequest<T>(endpoint: string): Promise<T> {
   return res.json();
 }
 
-/** Top airing anime right now */
 export async function getAiringAnime(page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/top/anime?filter=airing&page=${page}`);
 }
 
-/** Top anime all time */
 export async function getTopAnime(page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/top/anime?page=${page}`);
 }
 
-/** Most popular anime */
 export async function getPopularAnime(page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/top/anime?filter=bypopularity&page=${page}`);
 }
 
-/** Full anime details by MAL ID */
 export async function getAnimeDetails(malId: number): Promise<{ data: JikanAnime }> {
   return jikanRequest(`/anime/${malId}/full`);
 }
 
-/** Episodes list for an anime */
 export async function getAnimeEpisodes(malId: number, page = 1): Promise<JikanPaginatedResponse<JikanEpisode>> {
   return jikanRequest(`/anime/${malId}/episodes?page=${page}`);
 }
 
-/** Search anime by query */
 export async function searchAnime(query: string, page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/anime?q=${encodeURIComponent(query)}&page=${page}&sfw=true`);
 }
 
-/** Get anime by season e.g. winter 2025 */
 export async function getSeasonalAnime(year: number, season: string, page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/seasons/${year}/${season}?page=${page}`);
 }
 
-/** Get related anime (sequels, prequels, etc.) */
 export async function getAnimeRelations(malId: number): Promise<{ data: Array<{ relation: string; entry: Array<{ mal_id: number; type: string; name: string; url: string }> }> }> {
   return jikanRequest(`/anime/${malId}/relations`);
 }
 
-/** Get all anime genres */
 export async function getAnimeGenres(): Promise<{ data: JikanGenre[] }> {
   return jikanRequest(`/genres/anime`);
 }
 
-/** Get anime by genre ID */
 export async function getAnimeByGenre(genreId: number, page = 1): Promise<JikanPaginatedResponse<JikanAnime>> {
   return jikanRequest(`/anime?genres=${genreId}&order_by=score&sort=desc&page=${page}&sfw=true`);
 }

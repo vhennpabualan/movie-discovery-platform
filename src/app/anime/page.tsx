@@ -1,18 +1,19 @@
 import Link from 'next/link';
-import { getAiringAnime, getTopAnime, getPopularAnime, getAnimeGenres } from '@/lib/api/jikan-client';
+import { getAiringAnime, getTopAnime, getPopularAnime, getAnimeGenres, delay } from '@/lib/api/jikan-client';
 import { AnimeCard } from '@/features/anime/components/AnimeCard';
 import { AnimeHero } from '@/features/anime/components/AnimeHero';
 import { GenreBrowseSection } from '@/features/anime/components/GenreBrowseSection';
 
-export const revalidate = 3600;
 
 export default async function AnimePage() {
-  const [airing, top, popular, genresRes] = await Promise.all([
-    getAiringAnime(),
-    getTopAnime(),
-    getPopularAnime(),
-    getAnimeGenres(),
-  ]);
+  const airing = await getAiringAnime();
+  await delay(400);
+  const top = await getTopAnime();
+  await delay(400);
+  const popular = await getPopularAnime();
+  await delay(400);
+  const genresRes = await getAnimeGenres();
+  
 
   return (
     <main className="min-h-screen bg-netflix-dark">
