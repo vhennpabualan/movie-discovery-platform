@@ -5,7 +5,7 @@
  */
 
 export interface WebVitalsMetric {
-  name: 'LCP' | 'FID' | 'CLS';
+  name: 'LCP' | 'INP' | 'CLS';
   value: number;
   timestamp: number;
   rating: 'good' | 'needs-improvement' | 'poor';
@@ -13,7 +13,7 @@ export interface WebVitalsMetric {
 
 export interface WebVitalsData {
   lcp?: WebVitalsMetric;
-  fid?: WebVitalsMetric;
+  inp?: WebVitalsMetric;
   cls?: WebVitalsMetric;
   timestamp: string;
   url: string;
@@ -24,7 +24,7 @@ export interface WebVitalsData {
  * Determines the rating for a metric based on Web Vitals thresholds
  */
 function getRating(
-  metricName: 'LCP' | 'FID' | 'CLS',
+  metricName: 'LCP' | 'INP' | 'CLS',
   value: number
 ): 'good' | 'needs-improvement' | 'poor' {
   switch (metricName) {
@@ -33,8 +33,8 @@ function getRating(
       if (value < 2500) return 'good';
       if (value < 4000) return 'needs-improvement';
       return 'poor';
-    case 'FID':
-      // FID: Good < 100ms, Needs Improvement < 300ms, Poor >= 300ms
+    case 'INP':
+      // INP: Good < 100ms, Needs Improvement < 300ms, Poor >= 300ms
       if (value < 100) return 'good';
       if (value < 300) return 'needs-improvement';
       return 'poor';
@@ -85,9 +85,9 @@ function logMetricsToConsole(data: WebVitalsData): void {
         `LCP: ${data.lcp.value.toFixed(2)}ms (${data.lcp.rating})`
       );
     }
-    if (data.fid && typeof data.fid.value === 'number') {
+    if (data.inp && typeof data.inp.value === 'number') {
       console.log(
-        `FID: ${data.fid.value.toFixed(2)}ms (${data.fid.rating})`
+        `INP: ${data.inp.value.toFixed(2)}ms (${data.inp.rating})`
       );
     }
     if (data.cls && typeof data.cls.value === 'number') {
@@ -137,27 +137,27 @@ export function initializeWebVitalsTracking(): void {
       // LCP not supported
     }
 
-    // Track FID (First Input Delay)
+    // Track INP (First Input Delay)
     try {
-      const fidObserver = new PerformanceObserver((list) => {
+      const inpObserver = new PerformanceObserver((list) => {
         const entries = list.getEntries();
         entries.forEach((entry) => {
           const fidValue = (entry as any).processingDuration;
 
-          const fidMetric: WebVitalsMetric = {
-            name: 'FID',
+          const inpMetric: WebVitalsMetric = {
+            name: 'INP',
             value: fidValue,
             timestamp: Date.now(),
-            rating: getRating('FID', fidValue),
+            rating: getRating('INP', fidValue),
           };
 
-          metrics.fid = fidMetric;
+          metrics.inp = inpMetric;
         });
       });
 
-      fidObserver.observe({ entryTypes: ['first-input'] });
+      inpObserver.observe({ entryTypes: ['first-input'] });
     } catch (e) {
-      // FID not supported
+      // INP not supported
     }
 
     // Track CLS (Cumulative Layout Shift)
@@ -187,7 +187,7 @@ export function initializeWebVitalsTracking(): void {
 
     // Send metrics when page is about to unload
     window.addEventListener('beforeunload', () => {
-      if (metrics.lcp || metrics.fid || metrics.cls) {
+      if (metrics.lcp || metrics.inp || metrics.cls) {
         const data = metrics as WebVitalsData;
         logMetricsToConsole(data);
         sendMetricsToMonitoring(data);
@@ -196,7 +196,7 @@ export function initializeWebVitalsTracking(): void {
 
     // Also send metrics after a delay to capture metrics even if user doesn't navigate away
     setTimeout(() => {
-      if (metrics.lcp || metrics.fid || metrics.cls) {
+      if (metrics.lcp || metrics.inp || metrics.cls) {
         const data = metrics as WebVitalsData;
         logMetricsToConsole(data);
         sendMetricsToMonitoring(data);
@@ -245,21 +245,21 @@ export function getWebVitalsMetrics(): WebVitalsData | null {
 
       // Get FID using PerformanceObserver
       try {
-        const fidObserver = new PerformanceObserver((list) => {
+        const inpObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
           if (entries.length > 0) {
             const fidValue = (entries[0] as any).processingDuration;
-            metrics.fid = {
-              name: 'FID',
+            metrics.inp = {
+              name: 'INP',
               value: fidValue,
               timestamp: Date.now(),
-              rating: getRating('FID', fidValue),
+              rating: getRating('INP', fidValue),
             };
           }
         });
-        fidObserver.observe({ type: 'first-input', buffered: true });
+        inpObserver.observe({ type: 'first-input', buffered: true });
       } catch (e) {
-        // FID not supported
+        // INP not supported
       }
 
       // Get CLS using PerformanceObserver

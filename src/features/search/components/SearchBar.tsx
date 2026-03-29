@@ -1,16 +1,24 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
-import { searchMovies } from '@/lib/api/tmdb-client';
+import { searchMovies, searchTVShows } from '@/lib/api/tmdb-client';
 import { Movie } from '@/types/movie';
 import { useSearchParams } from '../hooks/useSearchParams';
 
+interface SearchResult extends Movie {
+  media_type?: 'movie' | 'tv';
+  name?: string;
+  first_air_date?: string;
+  release_date?: string;
+}
+
 export function SearchBar() {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Movie[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +26,7 @@ export function SearchBar() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const pathname = usePathname();
   const { query: urlQuery, setQuery: setUrlQuery, clearSearch, isInitialized } = useSearchParams();
 
   // Debounced search function
@@ -33,18 +42,39 @@ export function SearchBar() {
     setError(null);
 
     try {
-      const response = await searchMovies(searchQuery);
-      setResults(response.results || []);
+      const [movieResponse, tvResponse] = await Promise.all([
+        searchMovies(searchQuery),
+        searchTVShows(searchQuery),
+      ]);
+
+      const allResults: SearchResult[] = [
+        ...(movieResponse.results || []).map((item: any) => ({
+          ...item,
+          media_type: 'movie',
+        })),
+        ...(tvResponse.results || []).map((item: any) => ({
+          ...item,
+          media_type: 'tv',
+        })),
+      ];
+
+      setResults(allResults);
       setIsOpen(true);
       setSelectedIndex(-1);
     } catch (err) {
-      setError('Failed to search movies. Please try again.');
+      setError('Failed to search. Please try again.');
       setResults([]);
       console.error('Search error:', err);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Reset navigation state when pathname changes
+  useEffect(() => {
+    setIsNavigating(false);
+    setIsOpen(false);
+  }, [pathname]);
 
   // Initialize query from URL on mount
   useEffect(() => {
@@ -96,7 +126,7 @@ export function SearchBar() {
       case 'Enter':
         e.preventDefault();
         if (selectedIndex >= 0) {
-          navigateToMovie(results[selectedIndex].id);
+          navigateToItem(results[selectedIndex]);
         }
         break;
       case 'Escape':
@@ -109,19 +139,21 @@ export function SearchBar() {
     }
   };
 
-  // Navigate to movie details page
-  const navigateToMovie = (movieId: number) => {
-    router.push(`/movies/${movieId}`);
-    setQuery('');
-    setResults([]);
-    setIsOpen(false);
-    setSelectedIndex(-1);
-    clearSearch();
+  // Navigate to movie/TV details page
+  const navigateToItem = (item: SearchResult) => {
+    if (isNavigating) return; // Prevent double clicks
+    setIsNavigating(true);
+    const mediaType = item.media_type || 'movie';
+    const path = mediaType === 'tv' ? `/tv/${item.id}` : `/movies/${item.id}`;
+    router.push(path);
+    // Note: The useEffect with pathname will handle resetting state
   };
 
   // Handle result click
-  const handleResultClick = (movieId: number) => {
-    navigateToMovie(movieId);
+  const handleResultClick = (e: React.MouseEvent, item: SearchResult) => {
+    e.preventDefault();
+    e.stopPropagation();
+    navigateToItem(item);
   };
 
   // Close dropdown when clicking outside
@@ -153,9 +185,9 @@ export function SearchBar() {
   }, []);
 
   return (
-    <form className="relative w-full md:max-w-md mobile:w-full" onSubmit={(e) => e.preventDefault()}>
-      {/* Search Input */}
-      <div className="relative">
+    <div className="relative w-full md:max-w-md z-100">
+      {/* Search Input Container */}
+      <div className="relative z-100">
         <label htmlFor="search-input" className="sr-only">
           Search for movies
         </label>
@@ -167,8 +199,8 @@ export function SearchBar() {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           onFocus={() => query && results.length > 0 && setIsOpen(true)}
-          placeholder="Search movies..."
-          aria-label="Search for movies"
+          placeholder="Search movies and TV shows..."
+          aria-label="Search for movies and TV shows"
           aria-autocomplete="list"
           aria-controls="search-results"
           aria-expanded={isOpen}
@@ -181,70 +213,79 @@ export function SearchBar() {
         )}
       </div>
 
-      {/* Dropdown Results */}
+      {/* Dropdown & Backdrop */}
       {isOpen && (
-        <div
-          ref={dropdownRef}
-          id="search-results"
-          role="listbox"
-          aria-label="Search results"
-          className="absolute top-full left-0 right-0 mt-2 bg-netflix-dark-secondary border border-netflix-gray/30 rounded-lg shadow-2xl shadow-black/50 z-50 max-h-96 overflow-y-auto"
-        >
-          {error ? (
-            <div className="p-4 text-red-400 text-sm">{error}</div>
-          ) : results.length > 0 ? (
-            <ul className="divide-y divide-netflix-gray/20">
-              {results.map((movie, index) => (
-                <li
-                  key={movie.id}
-                  role="option"
-                  aria-selected={index === selectedIndex}
-                  onClick={() => handleResultClick(movie.id)}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                  className={`flex items-center gap-3 p-3 cursor-pointer transition-all duration-150 ${
-                    index === selectedIndex
-                      ? 'bg-netflix-red/20 border-l-2 border-netflix-red'
-                      : 'hover:bg-netflix-dark'
-                  }`}
-                >
-                  {/* Movie Poster Thumbnail */}
-                  {movie.poster_path ? (
-                    <div className="relative w-10 h-14 shrink-0 rounded overflow-hidden">
-                      <Image
-                        src={`https://image.tmdb.org/t/p/w92${movie.poster_path}`}
-                        alt={movie.title}
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                      />
+        <>
+          {/* Backdrop: Darkens the page and captures clicks to close */}
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-45"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          
+          {/* Results Dropdown: Anchored to the parent 'relative' div */}
+          <div
+            ref={dropdownRef}
+            id="search-results"
+            role="listbox"
+            aria-label="Search results"
+            className="absolute top-full left-0 right-0 mt-2 bg-[#141414] border border-white/10 rounded-md shadow-2xl z-60 max-h-[70vh] overflow-y-auto"
+          >
+            {error ? (
+              <div className="p-4 text-red-400 text-sm">{error}</div>
+            ) : results.length > 0 ? (
+              <ul className="flex flex-col">
+                {results.map((item, index) => (
+                  <li
+                    key={`${item.media_type || 'movie'}-${item.id}`}
+                    role="option"
+                    aria-selected={index === selectedIndex}
+                    onClick={(e) => handleResultClick(e, item)}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    className={`flex items-center gap-4 p-3 border-b border-white/5 cursor-pointer transition-colors ${
+                      index === selectedIndex
+                        ? 'bg-white/10'
+                        : 'hover:bg-white/5'
+                    } ${isNavigating ? 'pointer-events-none opacity-50' : ''}`}
+                  >
+                    {/* Poster */}
+                    <div className="relative w-12 h-16 shrink-0 bg-gray-800 rounded">
+                      {item.poster_path && (
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w92${item.poster_path}`}
+                          alt=""
+                          fill
+                          sizes="48px"
+                          className="object-cover rounded"
+                        />
+                      )}
                     </div>
-                  ) : (
-                    <div className="w-10 h-14 shrink-0 bg-netflix-gray/20 rounded flex items-center justify-center">
-                      <span className="text-netflix-gray text-xs">No Image</span>
-                    </div>
-                  )}
 
-                  {/* Movie Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-medium text-sm truncate">
-                      {movie.title}
-                    </h3>
-                    <p className="text-netflix-gray text-xs">
-                      {movie.release_date
-                        ? new Date(movie.release_date).getFullYear()
-                        : 'N/A'}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="p-4 text-netflix-gray text-sm text-center">
-              No movies found
-            </div>
-          )}
-        </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-white font-semibold text-sm truncate">
+                          {item.title}
+                        </h3>
+                        <span className="text-xs px-2 py-0.5 bg-netflix-red/20 text-netflix-red rounded whitespace-nowrap">
+                          {item.media_type === 'tv' ? 'TV' : 'Movie'}
+                        </span>
+                      </div>
+                      <p className="text-gray-400 text-xs mt-1">
+                        {item.release_date?.split('-')[0] || 'N/A'}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="p-8 text-gray-400 text-sm text-center">
+                No results found for &quot;{query}&quot;
+              </div>
+            )}
+          </div>
+        </>
       )}
-    </form>
+    </div>
   );
 }

@@ -6,10 +6,11 @@ import { Movie } from '@/types/movie';
 import { useViewTransition } from '@/lib/hooks/useViewTransition';
 
 interface MovieCardProps {
-  movie: Movie & { vote_average?: number };
-  onClick: (movieId: number) => void;
+  movie: Movie & { vote_average?: number; media_type?: 'movie' | 'tv' };
+  onClick?: (movieId: number) => void;
   isInWatchlist?: boolean;
   priority?: boolean;
+  index?: number; 
 }
 
 export function MovieCard({
@@ -17,19 +18,43 @@ export function MovieCard({
   onClick,
   isInWatchlist = false,
   priority = false,
+  index,
 }: MovieCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const { navigateWithTransition } = useViewTransition();
 
-  const handleClick = () => {
-    onClick(movie.id);
-    navigateWithTransition(`/movies/${movie.id}`);
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Set loading state
+    setIsNavigating(true);
+    
+    // Call onClick callback first (if provided)
+    onClick?.(movie.id);
+    
+    // Navigate based on media type
+    const mediaType = movie.media_type || 'movie';
+    const path = mediaType === 'tv' ? `/tv/${movie.id}` : `/movies/${movie.id}`;
+    navigateWithTransition(path);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter') {
-      onClick(movie.id);
-      navigateWithTransition(`/movies/${movie.id}`);
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Set loading state
+      setIsNavigating(true);
+      
+      // Call onClick callback first (if provided)
+      onClick?.(movie.id);
+      
+      // Navigate based on media type
+      const mediaType = movie.media_type || 'movie';
+      const path = mediaType === 'tv' ? `/tv/${movie.id}` : `/movies/${movie.id}`;
+      navigateWithTransition(path);
     }
   };
 
@@ -51,13 +76,23 @@ export function MovieCard({
       className="relative w-full aspect-2/3 cursor-pointer rounded-lg overflow-hidden group transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-netflix-red/50 focus:outline-none focus:ring-2 focus:ring-netflix-red"
       style={{ viewTransitionName: `poster-image-${movie.id}` } as any}
     >
+      {/* Loading Overlay */}
+      {isNavigating && (
+        <div className="absolute inset-0 bg-black/80 z-20 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-10 h-10 border-3 border-netflix-red border-t-transparent rounded-full animate-spin" />
+            <span className="text-white text-sm">Loading...</span>
+          </div>
+        </div>
+      )}
+
       {/* Poster Image */}
       {movie.poster_path ? (
         <Image
           src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
           alt={movie.title}
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-cover transition-all duration-300 group-hover:brightness-125"
           priority={priority}
         />
@@ -86,6 +121,7 @@ export function MovieCard({
           )}
         </div>
       )}
+      
 
       {/* Watchlist Badge */}
       {isInWatchlist && (
@@ -93,6 +129,25 @@ export function MovieCard({
           <span className="text-white text-xs font-bold">✓</span>
         </div>
       )}
+      {/* Number Badge - AniWatch style */}
+      {index !== undefined && (
+        <div className="absolute bottom-0 left-0 z-10">
+          <span
+            className="font-black leading-none select-none"
+            style={{
+              fontSize: 'clamp(2.5rem, 6vw, 4rem)',
+              color: 'transparent',
+              WebkitTextStroke: '2px rgba(255,255,255,0.25)',
+              lineHeight: 1,
+              display: 'block',
+              padding: '0 6px 2px',
+            }}
+          >
+            {String(index + 1).padStart(2, '0')}
+          </span>
+        </div>
+      )}
     </div>
+    
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { DomainProvider, StreamingError, StreamingErrorType } from '../types/index';
 import { VidsrcConfigurationManager } from '../services/VidsrcConfigurationManager';
 import { VidsrcEmbedURLGenerator } from '../services/VidsrcEmbedURLGenerator';
@@ -16,6 +16,7 @@ interface UseVidsrcPlayerState {
 
 export interface UseVidsrcPlayerReturn extends UseVidsrcPlayerState {
   retry: () => void;
+  retryWithNextDomain: () => void;
 }
 
 /**
@@ -42,7 +43,8 @@ export function useVidsrcPlayer(
   subtitleLanguage?: string,
   autoplay?: boolean,
   customSubtitleUrl?: string,
-  autonext?: boolean
+  autonext?: boolean,
+  preferredDomain?: DomainProvider | null
 ): UseVidsrcPlayerReturn {
   const [state, setState] = useState<UseVidsrcPlayerState>({
     loading: true,
@@ -52,17 +54,35 @@ export function useVidsrcPlayer(
     attemptedDomains: [],
   });
 
-  const configManager = useCallback(() => new VidsrcConfigurationManager(), []);
-  const urlGenerator = useCallback(() => new VidsrcEmbedURLGenerator(), []);
+  const configManagerRef = useRef<VidsrcConfigurationManager | null>(null);
+  const urlGeneratorRef = useRef<VidsrcEmbedURLGenerator | null>(null);
+
+  const configManager = useCallback(() => {
+    if (!configManagerRef.current) {
+      configManagerRef.current = new VidsrcConfigurationManager();
+    }
+    return configManagerRef.current;
+  }, []);
+
+  const urlGenerator = useCallback(() => {
+    if (!urlGeneratorRef.current) {
+      urlGeneratorRef.current = new VidsrcEmbedURLGenerator();
+    }
+    return urlGeneratorRef.current;
+  }, []);
 
   const generateURL = useCallback(
-    async (manager: VidsrcConfigurationManager, generator: VidsrcEmbedURLGenerator) => {
+    async (manager: VidsrcConfigurationManager, generator: VidsrcEmbedURLGenerator, forceDomain?: DomainProvider | null) => {
       try {
         // Validate TMDB ID
         generator.validateTmdbId(tmdbId);
 
-        // Get next available domain
-        const domain = manager.getNextDomain();
+        // Get domain - use preferred domain if provided and valid, otherwise get next available
+        let domain: DomainProvider | null = forceDomain || null;
+        if (!domain) {
+          domain = manager.getNextDomain();
+        }
+        
         if (!domain) {
           const error: StreamingError = {
             type: 'ALL_DOMAINS_FAILED',
@@ -138,8 +158,45 @@ export function useVidsrcPlayer(
         }));
       }
     },
-    [tmdbId, contentType, season, episode, subtitleLanguage, autoplay, customSubtitleUrl, autonext]
+    [tmdbId, contentType, season, episode, subtitleLanguage, autoplay, customSubtitleUrl, autonext, preferredDomain]
   );
+
+  // Effect to handle preferred domain changes
+  useEffect(() => {
+    if (preferredDomain && preferredDomain !== state.currentDomain) {
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        error: null,
+        embedURL: null,
+      }));
+
+      const manager = configManager();
+      const generator = urlGenerator();
+
+      generateURL(manager, generator, preferredDomain);
+    }
+  }, [preferredDomain, state.currentDomain, configManager, urlGenerator, generateURL]);
+
+  const retryWithNextDomain = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      loading: true,
+      error: null,
+      embedURL: null,
+    }));
+
+    const manager = configManager();
+    const generator = urlGenerator();
+
+    // Mark current domain as failed if we have one
+    if (state.currentDomain) {
+      manager.markDomainFailed(state.currentDomain);
+      console.log(`[Vidsrc] Marked domain as failed: ${state.currentDomain}, trying next domain...`);
+    }
+
+    generateURL(manager, generator);
+  }, [configManager, urlGenerator, generateURL, state.currentDomain]);
 
   const retry = useCallback(() => {
     setState({
@@ -153,7 +210,7 @@ export function useVidsrcPlayer(
     const manager = configManager();
     const generator = urlGenerator();
 
-    // Reset domain list on retry
+    // Reset domain list on full retry
     manager.resetDomains();
 
     generateURL(manager, generator);
@@ -163,11 +220,12 @@ export function useVidsrcPlayer(
     const manager = configManager();
     const generator = urlGenerator();
 
-    generateURL(manager, generator);
-  }, [generateURL, configManager, urlGenerator]);
+    generateURL(manager, generator, preferredDomain);
+  }, [generateURL, configManager, urlGenerator, preferredDomain]);
 
   return {
     ...state,
     retry,
+    retryWithNextDomain,
   };
 }

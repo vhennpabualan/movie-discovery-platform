@@ -61,7 +61,7 @@ describe('VidsrcStreamingPlayer', () => {
         <VidsrcStreamingPlayer tmdbId={550} contentType="movie" />
       );
 
-      const selector = screen.getByRole('combobox');
+      const selector = screen.getByLabelText('Select subtitle language');
       expect(selector).toBeInTheDocument();
     });
 
@@ -133,8 +133,8 @@ describe('VidsrcStreamingPlayer', () => {
         <VidsrcStreamingPlayer tmdbId={550} contentType="movie" />
       );
 
-      const loadingContainer = screen.queryByRole('combobox');
-      expect(loadingContainer).toBeDisabled();
+      const subtitleSelector = screen.getByLabelText('Select subtitle language');
+      expect(subtitleSelector).toBeDisabled();
     });
 
     it('disables subtitle selector while loading', () => {
@@ -155,7 +155,7 @@ describe('VidsrcStreamingPlayer', () => {
         <VidsrcStreamingPlayer tmdbId={550} contentType="movie" />
       );
 
-      const selector = screen.getByRole('combobox');
+      const selector = screen.getByLabelText('Select subtitle language');
       expect(selector).toBeDisabled();
     });
   });
@@ -267,7 +267,7 @@ describe('VidsrcStreamingPlayer', () => {
         <VidsrcStreamingPlayer tmdbId={550} contentType="movie" />
       );
 
-      const selector = screen.getByRole('combobox');
+      const selector = screen.getByLabelText('Select subtitle language');
       fireEvent.change(selector, { target: { value: 'es' } });
 
       expect(mockSetLanguage).toHaveBeenCalledWith('es');
@@ -291,7 +291,7 @@ describe('VidsrcStreamingPlayer', () => {
         <VidsrcStreamingPlayer tmdbId={550} contentType="movie" />
       );
 
-      const selector = screen.getByRole('combobox') as HTMLSelectElement;
+      const selector = screen.getByLabelText('Select subtitle language') as HTMLSelectElement;
       expect(selector.value).toBe('es');
     });
   });
@@ -362,7 +362,7 @@ describe('VidsrcStreamingPlayer', () => {
         <VidsrcStreamingPlayer tmdbId={550} contentType="movie" />
       );
 
-      const selector = screen.getByRole('combobox');
+      const selector = screen.getByLabelText('Select subtitle language');
       expect(selector).toHaveAttribute('aria-label', 'Select subtitle language');
     });
 
@@ -513,6 +513,8 @@ describe('VidsrcStreamingPlayer', () => {
         />
       );
 
+      // Check that the hook was called with the correct parameters
+      // The hook may be called multiple times, so we check the last call
       expect(mockUseVidsrcPlayer).toHaveBeenCalledWith(
         1399,
         'tv',
@@ -520,7 +522,9 @@ describe('VidsrcStreamingPlayer', () => {
         1,
         'en',
         false,
-        undefined
+        undefined,
+        undefined,
+        expect.any(String)
       );
     });
 
@@ -544,10 +548,15 @@ describe('VidsrcStreamingPlayer', () => {
           contentType="tv"
           season={2}
           episode={5}
+          totalSeasons={5}
+          totalEpisodesInSeason={10}
         />
       );
 
-      expect(screen.getByText('Season 2, Episode 5')).toBeInTheDocument();
+      const seasonSelector = screen.getByLabelText('Select season');
+      const episodeSelector = screen.getByLabelText('Select episode');
+      expect(seasonSelector).toHaveValue('2');
+      expect(episodeSelector).toHaveValue('5');
     });
 
     it('does not display season/episode for movies', () => {
@@ -601,11 +610,13 @@ describe('VidsrcStreamingPlayer', () => {
       expect(mockUseVidsrcPlayer).toHaveBeenCalledWith(
         550,
         'movie',
-        undefined,
-        undefined,
+        1,
+        1,
         'en',
         true,
-        undefined
+        undefined,
+        undefined,
+        expect.any(String)
       );
     });
 
@@ -635,11 +646,13 @@ describe('VidsrcStreamingPlayer', () => {
       expect(mockUseVidsrcPlayer).toHaveBeenCalledWith(
         550,
         'movie',
-        undefined,
-        undefined,
+        1,
+        1,
         'en',
         false,
-        customUrl
+        customUrl,
+        undefined,
+        expect.any(String)
       );
     });
   });

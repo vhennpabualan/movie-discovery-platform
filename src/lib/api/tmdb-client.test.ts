@@ -16,6 +16,7 @@ import {
   searchMovies,
   getMovieDetails,
   TMDbAPIError,
+  clearSearchCache,
 } from './tmdb-client';
 import { NetworkError, ValidationError, APIResponseError } from './errors';
 
@@ -28,6 +29,7 @@ global.fetch = jest.fn();
 describe('TMDb API Client with Zod Validation', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearSearchCache();
     process.env.NEXT_PUBLIC_TMDB_API_KEY = 'test-api-key';
   });
 

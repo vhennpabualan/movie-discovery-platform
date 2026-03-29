@@ -1,7 +1,7 @@
 'use server';
 
 import { Suspense } from 'react';
-import { searchMovies } from '@/lib/api/tmdb-client';
+import { searchMovies, searchTVShows } from '@/lib/api/tmdb-client';
 import { SearchResultsList } from '@/features/search/components/SearchResultsList';
 import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
 import { ErrorBoundary } from '@/features/ui/components/ErrorBoundary';
@@ -20,19 +20,35 @@ async function SearchResults({
   if (!query.trim()) {
     return (
       <div className="flex items-center justify-center py-12 md:py-16">
-        <p className="text-netflix-gray text-base md:text-lg">Enter a search query to find movies</p>
+        <p className="text-netflix-gray text-base md:text-lg">Enter a search query to find movies and TV shows</p>
       </div>
     );
   }
 
   try {
-    const results = await searchMovies(query, page);
+    // Search both movies and TV shows in parallel
+    const [movieResults, tvResults] = await Promise.all([
+      searchMovies(query, page),
+      searchTVShows(query, page),
+    ]);
 
-    if (!results.results || results.results.length === 0) {
+    // Combine results - TV shows are already normalized by searchTVShows
+    const allResults = [
+      ...(movieResults.results || []).map((item: any) => ({
+        ...item,
+        media_type: 'movie',
+      })),
+      ...(tvResults.results || []).map((item: any) => ({
+        ...item,
+        media_type: 'tv',
+      })),
+    ];
+
+    if (allResults.length === 0) {
       return (
         <div className="flex items-center justify-center py-12 md:py-16">
           <p className="text-netflix-gray text-base md:text-lg text-center">
-            No movies found for "{query}". Try a different search.
+            No movies or TV shows found for "{query}". Try a different search.
           </p>
         </div>
       );
@@ -40,45 +56,22 @@ async function SearchResults({
 
     return (
       <div className="space-y-8">
-        {/* Results Grid - 1 col mobile, 2 col tablet, 4 col desktop */}
+        {/* Results Grid - 2 col mobile, 3 col tablet, 5 col desktop */}
         <section
           role="region"
           aria-label="Search results"
           aria-live="polite"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 md:gap-6"
         >
-          <SearchResultsList results={results.results} />
+          <SearchResultsList results={allResults} />
         </section>
 
-        {/* Pagination Info */}
+        {/* Results Info */}
         <div className="flex items-center justify-center gap-4 py-6 md:py-8">
           <p className="text-netflix-gray text-xs md:text-sm">
-            Page {page} of {results.total_pages}
+            Found {allResults.length} results
           </p>
         </div>
-
-        {/* Pagination Controls */}
-        {results.total_pages > 1 && (
-          <nav aria-label="Search results pagination" className="flex items-center justify-center gap-4 flex-wrap">
-            {page > 1 && (
-              <a
-                href={`/search?q=${encodeURIComponent(query)}&page=${page - 1}`}
-                className="px-4 py-2 bg-netflix-red hover:bg-red-700 text-white rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark text-sm md:text-base"
-              >
-                Previous
-              </a>
-            )}
-
-            {page < results.total_pages && (
-              <a
-                href={`/search?q=${encodeURIComponent(query)}&page=${page + 1}`}
-                className="px-4 py-2 bg-netflix-red hover:bg-red-700 text-white rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-netflix-red focus:ring-offset-2 focus:ring-offset-netflix-dark text-sm md:text-base"
-              >
-                Next
-              </a>
-            )}
-          </nav>
-        )}
       </div>
     );
   } catch (error) {

@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Add these to your existing .gitignore
+
+# Custom Log & Test Output Files (Fixes the leaks in your screenshot)
+*.log
+*.txt
+test-results-final.txt
+
+# VS Code Settings (If you don't want to share local editor configs)
+.vscode/
+
+# Build & Cache
+.turbo/
+.cache/

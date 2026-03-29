@@ -73,12 +73,12 @@ body {
 }
 
 /* Smooth transitions for interactive elements */
-button,
-a,
-input,
-select,
-textarea {
-  transition: all 200ms ease-in-out;
+button, a {
+  transition: color 200ms ease-in-out, background-color 200ms ease-in-out, opacity 200ms ease-in-out;
+}
+
+input, select, textarea {
+  transition: border-color 200ms ease-in-out, box-shadow 200ms ease-in-out;
 }
 
 /* Focus styles for accessibility */
@@ -104,4 +104,20 @@ textarea {
 
 ::-webkit-scrollbar-thumb:hover {
   background-color: #e50914;
+}
+
+/* Mobile menu slide down animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s ease-out;
 }

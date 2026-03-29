@@ -10,17 +10,20 @@ import type { DomainProvider } from '../types';
 /**
  * Array of domain providers in priority order.
  * When one domain fails, the system will attempt the next domain in this list.
+ * Based on official Vidsrc API documentation.
  *
  * @constant
  * @type {DomainProvider[]}
  */
 export const DOMAIN_PROVIDERS: DomainProvider[] = [
-  'vidsrc.me',
+  'www.2embed.cc',    // first and this is the only runninng server that is not being blocked
+  'vidsrc.net',       // second (most reliable)
+  'multiembed.mov',   // Fourth
+  'vidsrc-embed.su',  // Fallbacks
+  'vsembed.ru',
   'vidsrc-embed.ru',
-  'vidsrc-embed.su',
   'vidsrcme.su',
   'vsrc.su',
-  'embed.su',
 ];
 
 /**

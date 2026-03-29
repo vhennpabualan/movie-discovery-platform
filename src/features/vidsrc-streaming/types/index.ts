@@ -9,14 +9,18 @@
 /**
  * Supported domain providers for Vidsrc embed URLs.
  * Listed in priority order for fallback logic.
+ * Based on official Vidsrc API documentation.
  */
 export type DomainProvider =
+  | 'vidsrc.net'
+  | 'embed.su'
+  | 'multiembed.mov'
+  | 'www.2embed.cc'
   | 'vidsrc-embed.ru'
   | 'vidsrc-embed.su'
   | 'vidsrcme.su'
   | 'vsrc.su'
-  | 'vidsrc.me'
-  | 'embed.su';
+  | 'vsembed.ru';
 
 /**
  * Health status information for a domain provider.
@@ -155,12 +159,22 @@ export interface StreamingPlayerProps {
   season?: number;
   /** Episode number (required for TV content) */
   episode?: number;
+  /** Total number of seasons (for TV shows) */
+  totalSeasons?: number;
+  /** Total number of episodes in the current season (for TV shows) */
+  totalEpisodesInSeason?: number;
   /** Whether to autoplay the video (optional, defaults to false) */
   autoplay?: boolean;
   /** Custom subtitle URL to use (optional) */
   customSubtitleUrl?: string;
+  /** Video quality indicator (optional, for display purposes) */
+  videoQuality?: 'HD' | 'CAM' | 'TS' | 'TC' | 'DVDRIP' | 'WEBRIP' | 'BLURAY' | '4K';
   /** Callback fired when an error occurs */
   onError?: (error: StreamingError) => void;
   /** Callback fired when streaming loads successfully */
   onSuccess?: () => void;
+  /** Callback fired when season changes (TV shows only) */
+  onSeasonChange?: (season: number) => void;
+  /** Callback fired when episode changes (TV shows only) */
+  onEpisodeChange?: (episode: number) => void;
 }

@@ -13,12 +13,28 @@ import type {
 } from '../types/index';
 
 const ALLOWED_DOMAINS: DomainProvider[] = [
+  'vidsrc.net',
+  'embed.su',
+  'multiembed.mov',
+  'www.2embed.cc',
   'vidsrc-embed.ru',
   'vidsrc-embed.su',
   'vidsrcme.su',
   'vsrc.su',
-  'vidsrc.me',
-  'embed.su',
+  'vsembed.ru',
+];
+
+// Path-based: /embed/movie/{id}
+const PATH_BASED_DOMAINS: DomainProvider[] = ['embed.su'];
+
+// Query-based: /embed/movie?tmdb={id}
+const QUERY_BASED_DOMAINS: DomainProvider[] = [
+  'vidsrc.net',
+  'vidsrc-embed.ru',
+  'vidsrc-embed.su',
+  'vidsrcme.su',
+  'vsrc.su',
+  'vsembed.ru',
 ];
 
 const TMDB_ID_MIN = 1;
@@ -42,24 +58,48 @@ export class VidsrcEmbedURLGenerator {
     this.validateTmdbId(config.tmdbId);
     this.validateDomain(config.domain);
 
-    const baseUrl = `https://${config.domain}/embed/movie`;
-    const params = new URLSearchParams();
+    // multiembed.mov has a completely unique format
+    if (config.domain === 'multiembed.mov') {
+      return `https://multiembed.mov/directstream.php?video_id=${config.tmdbId}&tmdb=1`;
+    }
 
-    params.append('tmdb', config.tmdbId.toString());
+    // 2embed.cc path format
+    if (config.domain === 'www.2embed.cc') {
+      return `https://www.2embed.cc/embed/${config.tmdbId}`;
+    }
+
+    // Path-based domains: embed.su
+    if (PATH_BASED_DOMAINS.includes(config.domain as DomainProvider)) {
+      const url = new URL(`https://${config.domain}/embed/movie/${config.tmdbId}`);
+      if (config.subtitleLanguage) {
+        url.searchParams.set('ds_lang', config.subtitleLanguage);
+      }
+      if (config.autoplay) {
+        url.searchParams.set('autoplay', '1');
+      }
+      if (config.customSubtitleUrl) {
+        url.searchParams.set('sub_url', config.customSubtitleUrl);
+      }
+      return url.toString();
+    }
+
+    // Query-based domains (vidsrc.net + legacy mirrors)
+    const url = new URL(`https://${config.domain}/embed/movie`);
+    url.searchParams.set('tmdb', config.tmdbId.toString());
 
     if (config.subtitleLanguage) {
-      params.append('ds_lang', config.subtitleLanguage);
+      url.searchParams.set('ds_lang', config.subtitleLanguage);
     }
 
     if (config.autoplay) {
-      params.append('autoplay', '1');
+      url.searchParams.set('autoplay', '1');
     }
 
     if (config.customSubtitleUrl) {
-      params.append('sub_url', config.customSubtitleUrl);
+      url.searchParams.set('sub_url', config.customSubtitleUrl);
     }
 
-    return `${baseUrl}?${params.toString()}`;
+    return url.toString();
   }
 
   /**
@@ -77,30 +117,59 @@ export class VidsrcEmbedURLGenerator {
       throw new Error('Season and episode are required for TV content');
     }
 
-    const baseUrl = `https://${config.domain}/embed/tv`;
-    const params = new URLSearchParams();
+    // multiembed.mov TV format
+    if (config.domain === 'multiembed.mov') {
+      return `https://multiembed.mov/directstream.php?video_id=${config.tmdbId}&tmdb=1&s=${config.season}&e=${config.episode}`;
+    }
 
-    params.append('tmdb', config.tmdbId.toString());
-    params.append('season', config.season.toString());
-    params.append('episode', config.episode.toString());
+    // 2embed.cc TV format
+    if (config.domain === 'www.2embed.cc') {
+      return `https://www.2embed.cc/embedtv/${config.tmdbId}&s=${config.season}&e=${config.episode}`;
+    }
+
+    // Path-based: embed.su
+    if (PATH_BASED_DOMAINS.includes(config.domain as DomainProvider)) {
+      const url = new URL(
+        `https://${config.domain}/embed/tv/${config.tmdbId}/${config.season}/${config.episode}`
+      );
+      if (config.subtitleLanguage) {
+        url.searchParams.set('ds_lang', config.subtitleLanguage);
+      }
+      if (config.autoplay) {
+        url.searchParams.set('autoplay', '1');
+      }
+      if (config.autonext) {
+        url.searchParams.set('autonext', '1');
+      }
+      if (config.customSubtitleUrl) {
+        url.searchParams.set('sub_url', config.customSubtitleUrl);
+      }
+      return url.toString();
+    }
+
+    // Query-based: vidsrc.net + legacy mirrors
+    const url = new URL(`https://${config.domain}/embed/tv`);
+    url.searchParams.set('tmdb', config.tmdbId.toString());
+    url.searchParams.set('season', config.season.toString());
+    url.searchParams.set('episode', config.episode.toString());
 
     if (config.subtitleLanguage) {
-      params.append('ds_lang', config.subtitleLanguage);
+      url.searchParams.set('ds_lang', config.subtitleLanguage);
     }
 
     if (config.autoplay) {
-      params.append('autoplay', '1');
+      url.searchParams.set('autoplay', '1');
     }
 
     if (config.customSubtitleUrl) {
-      params.append('sub_url', config.customSubtitleUrl);
+      url.searchParams.set('sub_url', config.customSubtitleUrl);
     }
 
     if (config.autonext) {
-      params.append('autonext', '1');
+      url.searchParams.set('autonext', '1');
     }
 
-    return `${baseUrl}?${params.toString()}`;
+    return url.toString();
   }
 
   /**
@@ -163,26 +232,49 @@ export class VidsrcEmbedURLGenerator {
 
       // Extract content type from pathname
       const pathname = urlObj.pathname;
-      let contentType: 'movie' | 'tv';
+      const pathParts = pathname.split('/').filter(p => p);
 
-      if (pathname.includes('/embed/movie')) {
-        contentType = 'movie';
-      } else if (pathname.includes('/embed/tv')) {
-        contentType = 'tv';
-      } else {
+      if (pathParts.length < 2 || pathParts[0] !== 'embed') {
         throw new Error(`Invalid URL path: ${pathname}`);
       }
 
-      // Extract and validate TMDB ID
-      const tmdbIdStr = urlObj.searchParams.get('tmdb');
-      if (!tmdbIdStr) {
+      const contentType = pathParts[1] as 'movie' | 'tv';
+      if (contentType !== 'movie' && contentType !== 'tv') {
+        throw new Error(`Invalid content type: ${contentType}`);
+      }
+
+      // Extract TMDB ID from query parameters
+      const tmdbParam = urlObj.searchParams.get('tmdb');
+      if (!tmdbParam) {
         throw new Error('Missing required parameter: tmdb');
       }
 
-      const tmdbId = parseInt(tmdbIdStr, 10);
+      const tmdbId = parseInt(tmdbParam, 10);
       this.validateTmdbId(tmdbId);
 
-      // Extract optional parameters
+      // Extract season and episode for TV content
+      let season: number | undefined;
+      let episode: number | undefined;
+
+      if (contentType === 'tv') {
+        const seasonParam = urlObj.searchParams.get('season');
+        const episodeParam = urlObj.searchParams.get('episode');
+
+        if (!seasonParam || !episodeParam) {
+          throw new Error(
+            'Missing required parameters for TV content: season, episode'
+          );
+        }
+
+        season = parseInt(seasonParam, 10);
+        episode = parseInt(episodeParam, 10);
+
+        if (!Number.isInteger(season) || !Number.isInteger(episode)) {
+          throw new Error('Season and episode must be integers');
+        }
+      }
+
+      // Extract optional parameters from query string
       const subtitleLanguage = urlObj.searchParams.get('ds_lang') as
         | SubtitleLanguage
         | null;
@@ -191,28 +283,6 @@ export class VidsrcEmbedURLGenerator {
       const customSubtitleUrl = urlObj.searchParams.get('sub_url');
       const autonextStr = urlObj.searchParams.get('autonext');
       const autonext = autonextStr === '1';
-
-      // Extract season and episode for TV content
-      let season: number | undefined;
-      let episode: number | undefined;
-
-      if (contentType === 'tv') {
-        const seasonStr = urlObj.searchParams.get('season');
-        const episodeStr = urlObj.searchParams.get('episode');
-
-        if (!seasonStr || !episodeStr) {
-          throw new Error(
-            'Missing required parameters for TV content: season, episode'
-          );
-        }
-
-        season = parseInt(seasonStr, 10);
-        episode = parseInt(episodeStr, 10);
-
-        if (!Number.isInteger(season) || !Number.isInteger(episode)) {
-          throw new Error('Season and episode must be integers');
-        }
-      }
 
       return {
         domain: normalizedDomain as DomainProvider,

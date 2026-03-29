@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useVidsrcPlayer } from '../hooks/useVidsrcPlayer';
 import { useSubtitlePreference } from '../hooks/useSubtitlePreference';
-import type { StreamingPlayerProps } from '../types/index';
+import type { StreamingPlayerProps, DomainProvider } from '../types/index';
+import { DOMAIN_PROVIDERS } from '../config/domains';
 import { SubtitleLanguageSelector } from './SubtitleLanguageSelector';
 import { StreamErrorBoundary } from './StreamErrorBoundary';
 import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
+import { SeasonEpisodeSelector } from './SeasonEpisodeSelector';
+import { VideoQualityBadge, type VideoQuality } from './VideoQualityBadge';
 
 /**
  * VidsrcStreamingPlayer Component
@@ -50,23 +53,57 @@ import { LoadingSkeleton } from '@/features/ui/components/LoadingSkeleton';
 export function VidsrcStreamingPlayer({
   tmdbId,
   contentType,
-  season,
-  episode,
+  season: initialSeason,
+  episode: initialEpisode,
+  totalSeasons,
+  totalEpisodesInSeason,
   autoplay = false,
   customSubtitleUrl,
+  videoQuality,
   onError,
   onSuccess,
+  onSeasonChange,
+  onEpisodeChange,
 }: StreamingPlayerProps) {
+  const [selectedDomain, setSelectedDomain] = useState<DomainProvider | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [currentSeason, setCurrentSeason] = useState(initialSeason ?? 1);
+  const [currentEpisode, setCurrentEpisode] = useState(initialEpisode ?? 1);
   const { language, setLanguage } = useSubtitlePreference(tmdbId);
-  const { loading, error, embedURL, retry } = useVidsrcPlayer(
+  const { loading, error, embedURL, retry, retryWithNextDomain, currentDomain } = useVidsrcPlayer(
     tmdbId,
     contentType,
-    season,
-    episode,
+    currentSeason,
+    currentEpisode,
     language,
     autoplay,
-    customSubtitleUrl
+    customSubtitleUrl,
+    undefined,
+    selectedDomain
   );
+
+  // Handle season change
+  const handleSeasonChange = (newSeason: number) => {
+    setCurrentSeason(newSeason);
+    if (onSeasonChange) {
+      onSeasonChange(newSeason);
+    }
+  };
+
+  // Handle episode change
+  const handleEpisodeChange = (newEpisode: number) => {
+    setCurrentEpisode(newEpisode);
+    if (onEpisodeChange) {
+      onEpisodeChange(newEpisode);
+    }
+  };
+
+  // Update selected domain when current domain changes
+  useEffect(() => {
+    if (currentDomain && !selectedDomain) {
+      setSelectedDomain(currentDomain);
+    }
+  }, [currentDomain, selectedDomain]);
 
   // Call onSuccess callback when player loads successfully
   useEffect(() => {
@@ -85,26 +122,73 @@ export function VidsrcStreamingPlayer({
   return (
     <StreamErrorBoundary error={error} onRetry={retry}>
       <div className="w-full">
-        {/* TV Show Season/Episode Display */}
-        {contentType === 'tv' && season !== undefined && episode !== undefined && (
-          <div className="mb-4 text-sm text-gray-400">
-            Season {season}, Episode {episode}
+        {/* Video Quality Badge */}
+        {videoQuality && (
+          <div className="mb-3">
+            <VideoQualityBadge quality={videoQuality} />
           </div>
         )}
 
-        {/* Subtitle Language Selector */}
-        <div className="mb-4 flex items-center gap-3">
-          <label
-            htmlFor="subtitle-selector"
-            className="text-sm font-medium text-gray-300"
-          >
-            Subtitles:
-          </label>
-          <SubtitleLanguageSelector
-            selectedLanguage={language}
-            onLanguageChange={setLanguage}
-            disabled={loading}
-          />
+        {/* TV Show Season/Episode Selector */}
+        {contentType === 'tv' && totalSeasons && totalEpisodesInSeason && (
+          <div className="mb-4 p-4 bg-gray-900/50 rounded-lg border border-gray-800">
+            <SeasonEpisodeSelector
+              selectedSeason={currentSeason}
+              selectedEpisode={currentEpisode}
+              totalSeasons={totalSeasons}
+              totalEpisodesInSeason={totalEpisodesInSeason}
+              onSeasonChange={handleSeasonChange}
+              onEpisodeChange={handleEpisodeChange}
+              disabled={loading}
+            />
+          </div>
+        )}
+
+        {/* Subtitle Selector and Domain Selector */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="subtitle-selector"
+              className="text-sm font-medium text-gray-300"
+            >
+              Subtitles:
+            </label>
+            <SubtitleLanguageSelector
+              selectedLanguage={language}
+              onLanguageChange={setLanguage}
+              disabled={loading}
+            />
+          </div>
+
+          {/* Domain/Server Selector */}
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="domain-selector"
+              className="text-sm font-medium text-gray-300"
+            >
+              Server:
+            </label>
+            <select
+              id="domain-selector"
+              value={selectedDomain || currentDomain || ''}
+              onChange={(e) => {
+                const newDomain = e.target.value as DomainProvider;
+                if (newDomain) {
+                  setSelectedDomain(newDomain);
+                }
+              }}
+              disabled={loading}
+              className="px-3 py-1 bg-gray-800 text-gray-100 text-sm rounded border border-gray-700 hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-netflix-red disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Select streaming server"
+            >
+              <option value="">Select a server...</option>
+              {DOMAIN_PROVIDERS.map((domain) => (
+                <option key={domain} value={domain}>
+                  {domain}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Loading State */}
@@ -117,24 +201,23 @@ export function VidsrcStreamingPlayer({
         {/* Player Container - 16:9 Aspect Ratio */}
         {!loading && embedURL && (
           <div className="w-full bg-black rounded-lg overflow-hidden">
-            {/* Responsive container with 16:9 aspect ratio */}
             <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
               <iframe
                 src={embedURL}
                 title="Vidsrc Streaming Player"
                 aria-label="Vidsrc Streaming Player"
                 className="absolute inset-0 w-full h-full border-0 rounded-lg"
-                sandbox="allow-scripts allow-same-origin allow-presentation"
-                referrerPolicy="unsafe-url"
+                referrerPolicy="no-referrer"
                 allowFullScreen
+                allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                loading="lazy"
                 onLoad={() => {
-                  // Iframe loaded successfully - clear any errors
                   console.log('[Vidsrc] Player loaded successfully');
+                  console.log('[Vidsrc] Embed URL:', embedURL);
                 }}
                 onError={() => {
-                  // If iframe fails to load, trigger retry with next domain
                   console.warn('[Vidsrc] Iframe failed to load, retrying with next domain');
-                  retry();
+                  retryWithNextDomain();
                 }}
               />
             </div>

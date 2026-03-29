@@ -2,26 +2,24 @@
 
 import { MovieCard } from '@/features/movies/components/MovieCard';
 import { Movie } from '@/types';
-import { useViewTransition } from '@/lib/hooks/useViewTransition';
+
+interface SearchResult extends Movie {
+  media_type?: 'movie' | 'tv';
+  name?: string; // For TV shows (kept for reference)
+  first_air_date?: string; // For TV shows (kept for reference)
+}
 
 interface SearchResultsListProps {
-  results: Movie[];
+  results: SearchResult[];
 }
 
 export function SearchResultsList({ results }: SearchResultsListProps) {
-  const { navigateWithTransition } = useViewTransition();
-
-  const handleMovieClick = (movieId: number) => {
-    navigateWithTransition(`/movies/${movieId}`);
-  };
-
   return (
     <ul className="contents">
-      {results.map((movie) => (
-        <li key={movie.id}>
-          <MovieCard
-            movie={movie}
-            onClick={handleMovieClick}
+      {results.map((item) => (
+        <li key={`${item.media_type || 'movie'}-${item.id}`}>
+          <MovieCard 
+            movie={item} 
           />
         </li>
       ))}

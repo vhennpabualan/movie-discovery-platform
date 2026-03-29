@@ -5,6 +5,7 @@
  */
 
 import { APIResponse, Movie, MovieDetails } from '@/types';
+import { TVShowDetails, TVSeasonDetails } from '@/types/tv-details';
 import { apiResponseSchema, movieDetailsSchema } from '@/lib/validation';
 import {
   APIResponseError,
@@ -22,11 +23,25 @@ const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_DELAY = 100; // milliseconds
 
+// Cache for search results
+const searchCache = new Map<string, APIResponse>();
+
+// In-flight requests map to deduplicate concurrent requests
+const inFlightRequests = new Map<string, Promise<APIResponse>>();
+
 /**
  * Gets the API key from environment
  */
 function getApiKey(): string {
   return process.env.NEXT_PUBLIC_TMDB_API_KEY || '';
+}
+
+/**
+ * Clears the search cache and in-flight requests (for testing purposes)
+ */
+export function clearSearchCache(): void {
+  searchCache.clear();
+  inFlightRequests.clear();
 }
 
 /**
@@ -226,26 +241,53 @@ export async function searchMovies(
   page: number = 1
 ): Promise<APIResponse> {
   const encodedQuery = encodeURIComponent(query);
+  const cacheKey = `${query}:${page}`;
   const endpoint = `/search/movie?query=${encodedQuery}&page=${page}`;
-  try {
-    const data = await makeRequest<APIResponse>(endpoint, {
-      next: { revalidate: 3600, tags: [`search-results-${query}`] },
-    });
 
-    // Validate response against schema before returning
-    const validatedData = apiResponseSchema.parse(data) as APIResponse;
-    return validatedData;
-  } catch (error) {
-    if (error instanceof Error && error.name === 'ZodError') {
-      const validationError = new ValidationError(
-        `Invalid API response format: ${error.message}`,
-        error
-      );
-      logError(validationError, endpoint);
-      throw validationError;
-    }
-    throw error;
+  // Check if result is in cache
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey)!;
   }
+
+  // Check if request is in-flight
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey)!;
+  }
+
+  // Create new request and store in in-flight map
+  const requestPromise = (async () => {
+    try {
+      const data = await makeRequest<APIResponse>(endpoint, {
+        next: { revalidate: 3600, tags: [`search-results-${query}`] },
+      });
+
+      // Validate response against schema before returning
+      const validatedData = apiResponseSchema.parse(data) as APIResponse;
+
+      // Cache the result
+      searchCache.set(cacheKey, validatedData);
+
+      return validatedData;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        const validationError = new ValidationError(
+          `Invalid API response format: ${error.message}`,
+          error
+        );
+        logError(validationError, endpoint);
+        throw validationError;
+      }
+      throw error;
+    } finally {
+      // Clean up in-flight map entry
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  // Store in-flight request
+  inFlightRequests.set(cacheKey, requestPromise);
+
+  return requestPromise;
 }
 
 /**
@@ -305,5 +347,335 @@ export async function getSimilarMovies(
       throw validationError;
     }
     throw error;
+  }
+}
+
+/**
+ * Fetches the list of official genres from TMDb
+ * @returns Array of genre objects with id and name
+ */
+export async function getGenres(): Promise<Array<{ id: number; name: string }>> {
+  const endpoint = '/genre/movie/list';
+  try {
+    const data = await makeRequest<{ genres: Array<{ id: number; name: string }> }>(endpoint, {
+      next: { revalidate: 604800, tags: ['genres'] },
+    });
+    return data.genres || [];
+  } catch (error) {
+    logError(error as Error, endpoint);
+    throw error;
+  }
+}
+
+/**
+ * Fetches movies by genre
+ * @param genreId - The genre ID
+ * @param page - Page number for pagination (default: 1)
+ * @returns APIResponse containing movies in the specified genre
+ */
+export async function getMoviesByGenre(
+  genreId: number,
+  page: number = 1
+): Promise<APIResponse> {
+  const cacheKey = `genre-${genreId}:${page}`;
+  const endpoint = `/discover/movie?with_genres=${genreId}&page=${page}&sort_by=popularity.desc`;
+
+  // Check if result is in cache
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey)!;
+  }
+
+  // Check if request is in-flight
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey)!;
+  }
+
+  // Create new request and store in in-flight map
+  const requestPromise = (async () => {
+    try {
+      const data = await makeRequest<APIResponse>(endpoint, {
+        next: { revalidate: 3600, tags: [`genre-movies-${genreId}`] },
+      });
+
+      // Validate response against schema before returning
+      const validatedData = apiResponseSchema.parse(data) as APIResponse;
+
+      // Cache the result
+      searchCache.set(cacheKey, validatedData);
+
+      return validatedData;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        const validationError = new ValidationError(
+          `Invalid API response format: ${error.message}`,
+          error
+        );
+        logError(validationError, endpoint);
+        throw validationError;
+      }
+      throw error;
+    } finally {
+      // Clean up in-flight map entry
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  // Store in-flight request
+  inFlightRequests.set(cacheKey, requestPromise);
+
+  return requestPromise;
+}
+
+/**
+ * Fetches detailed information for a specific TV show
+ * @param tvId - The TMDb TV show ID
+ * @returns TVShowDetails object with full TV show information
+ */
+export async function getTVShowDetails(tvId: number): Promise<TVShowDetails> {
+  const endpoint = `/tv/${tvId}`;
+  try {
+    const data = await makeRequest<TVShowDetails>(endpoint, {
+      next: { revalidate: 86400, tags: [`tv-details-${tvId}`] },
+    });
+    return data;
+  } catch (error) {
+    logError(error as Error, endpoint);
+    throw error;
+  }
+}
+
+/**
+ * Fetches detailed information for a specific season of a TV show
+ * @param tvId - The TMDb TV show ID
+ * @param seasonNumber - The season number
+ * @returns TVSeasonDetails object with season and episode information
+ */
+export async function getTVSeasonDetails(
+  tvId: number,
+  seasonNumber: number
+): Promise<TVSeasonDetails> {
+  const endpoint = `/tv/${tvId}/season/${seasonNumber}`;
+  try {
+    const data = await makeRequest<TVSeasonDetails>(endpoint, {
+      next: { revalidate: 86400, tags: [`tv-season-${tvId}-${seasonNumber}`] },
+    });
+    return data;
+  } catch (error) {
+    logError(error as Error, endpoint);
+    throw error;
+  }
+}
+
+/**
+ * Fetches similar/related TV shows for a specific TV show
+ * @param tvId - The TMDb TV show ID
+ * @param page - Page number for pagination (default: 1)
+ * @returns APIResponse containing similar TV shows
+ */
+export async function getSimilarTVShows(
+  tvId: number,
+  page: number = 1
+): Promise<APIResponse> {
+  const endpoint = `/tv/${tvId}/similar?page=${page}`;
+  try {
+    const data = await makeRequest<APIResponse>(endpoint, {
+      next: { revalidate: 86400, tags: [`similar-tv-${tvId}`] },
+    });
+    const validatedData = apiResponseSchema.parse(data) as APIResponse;
+    return validatedData;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'ZodError') {
+      const validationError = new ValidationError(
+        `Invalid API response format: ${error.message}`,
+        error
+      );
+      logError(validationError, endpoint);
+      throw validationError;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Searches for TV shows by query string
+ * @param query - The search query
+ * @param page - Page number for pagination (default: 1)
+ * @returns APIResponse containing search results
+ */
+export async function searchTVShows(
+  query: string,
+  page: number = 1
+): Promise<APIResponse> {
+  const encodedQuery = encodeURIComponent(query);
+  const cacheKey = `tv-${query}:${page}`;
+  const endpoint = `/search/tv?query=${encodedQuery}&page=${page}`;
+
+  if (searchCache.has(cacheKey)) {
+    return searchCache.get(cacheKey)!;
+  }
+
+  if (inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey)!;
+  }
+
+  const requestPromise = (async () => {
+    try {
+      const data = await makeRequest<any>(endpoint, {
+        next: { revalidate: 3600, tags: [`search-tv-${query}`] },
+      });
+
+      // Normalize TV show data to match Movie schema
+      const normalizedData = {
+        ...data,
+        results: (data.results || []).map((show: any) => ({
+          id: show.id,
+          title: show.name, // Map name to title
+          poster_path: show.poster_path,
+          release_date: show.first_air_date, // Map first_air_date to release_date
+          vote_average: show.vote_average,
+          overview: show.overview,
+          // Keep original fields for reference
+          name: show.name,
+          first_air_date: show.first_air_date,
+        })),
+      };
+
+      const validatedData = apiResponseSchema.parse(normalizedData) as APIResponse;
+      searchCache.set(cacheKey, validatedData);
+      return validatedData;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ZodError') {
+        const validationError = new ValidationError(
+          `Invalid API response format: ${error.message}`,
+          error
+        );
+        logError(validationError, endpoint);
+        throw validationError;
+      }
+      throw error;
+    } finally {
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightRequests.set(cacheKey, requestPromise);
+  return requestPromise;
+}
+export async function getNowPlaying(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/now_playing?page=${page}`, {
+    next: { revalidate: 3600, tags: ['now-playing'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getPopularMovies(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/popular?page=${page}`, {
+    next: { revalidate: 3600, tags: ['popular-movies'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getTopRated(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/top_rated?page=${page}`, {
+    next: { revalidate: 3600, tags: ['top-rated'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getUpcoming(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<APIResponse>(`/movie/upcoming?page=${page}`, {
+    next: { revalidate: 3600, tags: ['upcoming'] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getTopAiringTV(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<any>(`/tv/on_the_air?page=${page}`, {
+    next: { revalidate: 3600, tags: ['top-airing-tv'] },
+  });
+
+  // Normalize TV fields to match Movie schema
+  const normalized = {
+    ...data,
+    results: (data.results || []).map((show: any) => ({
+      id: show.id,
+      title: show.name,
+      poster_path: show.poster_path,
+      backdrop_path: show.backdrop_path,
+      release_date: show.first_air_date,
+      overview: show.overview,
+      vote_average: show.vote_average,
+    })),
+  };
+
+  return apiResponseSchema.parse(normalized) as APIResponse;
+}
+export async function getMoviesByCategory(
+  category: 'now_playing' | 'popular' | 'top_rated' | 'upcoming' | 'top_tv' | 'kdrama' | 'anime',
+  page = 1
+): Promise<APIResponse> {
+  if (category === 'top_tv') return getTopAiringTV(page);
+  if (category === 'kdrama') return getKDramas(page);
+  if (category === 'anime')  return getAnime(page);   // ← add
+  const data = await makeRequest<APIResponse>(`/movie/${category}?page=${page}`, {
+    next: { revalidate: 3600, tags: [`category-${category}`] },
+  });
+  return apiResponseSchema.parse(data) as APIResponse;
+}
+
+export async function getKDramas(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<any>(
+    `/discover/tv?with_origin_country=KR&with_genres=18&sort_by=popularity.desc&page=${page}`,
+    { next: { revalidate: 3600, tags: ['kdramas'] } }
+  );
+
+  const normalized = {
+    ...data,
+    results: (data.results || []).map((show: any) => ({
+      id: show.id,
+      title: show.name,
+      poster_path: show.poster_path,
+      backdrop_path: show.backdrop_path,
+      release_date: show.first_air_date,
+      overview: show.overview,
+      vote_average: show.vote_average,
+    })),
+  };
+
+  return apiResponseSchema.parse(normalized) as APIResponse;
+}
+
+export async function getAnime(page = 1): Promise<APIResponse> {
+  const data = await makeRequest<any>(
+    `/discover/tv?with_genres=16&with_origin_country=JP&sort_by=popularity.desc&page=${page}`,
+    { next: { revalidate: 3600, tags: ['anime'] } }
+  );
+
+  const normalized = {
+    ...data,
+    results: (data.results || []).map((show: any) => ({
+      id: show.id,
+      title: show.name,
+      poster_path: show.poster_path,
+      backdrop_path: show.backdrop_path,
+      release_date: show.first_air_date,
+      overview: show.overview,
+      vote_average: show.vote_average,
+    })),
+  };
+
+  return apiResponseSchema.parse(normalized) as APIResponse;
+}
+export async function findTMDBIdByTitle(title: string): Promise<number | null> {
+  try {
+    const encoded = encodeURIComponent(title);
+    const data = await makeRequest<any>(
+      `/search/tv?query=${encoded}&page=1`,
+      { next: { revalidate: 86400 } }
+    );
+    if (data.results?.length > 0) return data.results[0].id;
+    return null;
+  } catch {
+    return null;
   }
 }

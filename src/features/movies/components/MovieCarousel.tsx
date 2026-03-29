@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import { Movie } from '@/types/movie';
 import { MovieCard } from './MovieCard';
 import { useViewTransition } from '@/lib/hooks/useViewTransition';
@@ -10,21 +9,21 @@ interface MovieCarouselProps {
   movies: (Movie & { vote_average?: number })[];
   onMovieClick?: (movieId: number) => void;
   watchlistIds?: number[];
+  
 }
 
 export function MovieCarousel({
   movies,
   onMovieClick,
   watchlistIds = [],
+  
 }: MovieCarouselProps) {
   const scrollContainerRef = useRef<HTMLUListElement>(null);
-  const router = useRouter();
   const { navigateWithTransition } = useViewTransition();
 
-  // Default navigation handler when onMovieClick is not provided
-  const handleMovieClick = onMovieClick || ((movieId: number) => {
-    navigateWithTransition(`/movies/${movieId}`);
-  });
+  // Default click handler when onMovieClick is not provided
+  // NOTE: Navigation is handled by MovieCard to avoid double navigation.
+  const handleMovieClick = onMovieClick || (() => {});
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollContainerRef.current) {
@@ -54,23 +53,24 @@ export function MovieCarousel({
       {/* Scroll Container */}
       <ul
         ref={scrollContainerRef}
-        className="flex gap-4 overflow-x-auto scroll-smooth pb-4 px-4 md:px-6 lg:px-8 scrollbar-hide list-none"
+        className="flex gap-2 sm:gap-4 overflow-x-auto scroll-smooth pb-4 px-2 sm:px-4 md:px-6 lg:px-8 scrollbar-hide list-none"
         style={{
           scrollBehavior: 'smooth',
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Grid Layout: 1 col mobile, 2 col tablet, 4 col desktop */}
+        {/* Grid Layout: 2 col mobile, 3 col tablet, 5 col desktop */}
         {movies.map((movie, index) => (
           <li
             key={movie.id}
-            className="shrink-0 w-full sm:w-1/2 md:w-1/2 lg:w-1/4"
+            className="shrink-0 w-[45%] sm:w-[32%] md:w-[30%] lg:w-[18%]"
           >
             <MovieCard
               movie={movie}
               onClick={handleMovieClick}
               isInWatchlist={watchlistIds.includes(movie.id)}
               priority={index === 0}
+              index={index}
             />
           </li>
         ))}

@@ -371,11 +371,15 @@ describe('VidsrcStreamingPlayer - Responsive Design', () => {
           contentType="tv"
           season={1}
           episode={1}
+          totalSeasons={5}
+          totalEpisodesInSeason={10}
         />
       );
 
-      const seasonEpisode = screen.getByText('Season 1, Episode 1');
-      expect(seasonEpisode).toHaveClass('text-sm');
+      const seasonLabel = screen.getByRole('combobox', { name: /select season/i });
+      const episodeLabel = screen.getByRole('combobox', { name: /select episode/i });
+      expect(seasonLabel).toBeInTheDocument();
+      expect(episodeLabel).toBeInTheDocument();
     });
   });
 

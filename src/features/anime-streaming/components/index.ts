@@ -1,0 +1,1 @@
+export { AnimeStreamingPlayer } from './AnimeStreamingPlayer';

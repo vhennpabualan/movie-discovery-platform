@@ -40,18 +40,18 @@ export function LoadingSkeleton({
     <div className="relative w-full">
       {/* Scroll Container - matches MovieCarousel layout */}
       <div
-        className="flex gap-4 overflow-x-auto pb-4 px-4 md:px-6 lg:px-8 scrollbar-hide"
+        className="flex gap-2 sm:gap-4 overflow-x-auto pb-4 px-2 sm:px-4 md:px-6 lg:px-8 scrollbar-hide"
         style={{
           scrollBehavior: 'smooth',
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        {/* Grid Layout: 1 col mobile, 2 col tablet, 4 col desktop */}
-        <div className="flex gap-4 min-w-full md:min-w-auto">
+        {/* Grid Layout: 2 col mobile, 3 col tablet, 5 col desktop */}
+        <div className="flex gap-2 sm:gap-4 min-w-full md:min-w-auto">
           {Array.from({ length: itemCount }).map((_, index) => (
             <div
               key={index}
-              className="shrink-0 w-full sm:w-1/2 md:w-1/2 lg:w-1/4"
+              className="shrink-0 w-[45%] sm:w-[32%] md:w-[30%] lg:w-[18%]"
             >
               {/* Skeleton Card */}
               <div
